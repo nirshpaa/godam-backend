@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jacky-htg/inventory/libraries/api"
+	"github.com/nirshpaa/godam-backend/libraries/api"
 )
 
 // Inventory : struct of Receive

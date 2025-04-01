@@ -3,7 +3,7 @@ package request
 import (
 	"time"
 
-	"github.com/jacky-htg/inventory/models"
+	"github.com/nirshpaa/godam-backend/models"
 )
 
 // NewPurchaseReturnRequest : format json request for new purchase return

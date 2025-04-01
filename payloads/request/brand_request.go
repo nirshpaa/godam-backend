@@ -1,6 +1,6 @@
 package request
 
-import "github.com/jacky-htg/inventory/models"
+import "github.com/nirshpaa/godam-backend/models"
 
 // NewBrandRequest is json request for new Brand and validation
 type NewBrandRequest struct {

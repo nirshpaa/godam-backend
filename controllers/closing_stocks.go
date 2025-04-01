@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/jacky-htg/inventory/libraries/api"
-	"github.com/jacky-htg/inventory/models"
+	"github.com/nirshpaa/godam-backend/libraries/api"
+	"github.com/nirshpaa/godam-backend/models"
 )
 
 // ClosingStocks : struct for set ClosingStocks Dependency Injection

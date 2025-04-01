@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/jacky-htg/inventory/libraries/api"
-	"github.com/jacky-htg/inventory/models"
-	"github.com/jacky-htg/inventory/payloads/request"
-	"github.com/jacky-htg/inventory/payloads/response"
+	"github.com/nirshpaa/godam-backend/libraries/api"
+	"github.com/nirshpaa/godam-backend/models"
+	"github.com/nirshpaa/godam-backend/payloads/request"
+	"github.com/nirshpaa/godam-backend/payloads/response"
 	"github.com/julienschmidt/httprouter"
 )
 

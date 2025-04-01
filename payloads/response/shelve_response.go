@@ -1,7 +1,7 @@
 package response
 
 import (
-	"github.com/jacky-htg/inventory/models"
+	"github.com/nirshpaa/godam-backend/models"
 )
 
 // ShelveResponse : format json response for shelve

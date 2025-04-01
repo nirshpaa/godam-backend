@@ -1,6 +1,6 @@
 package request
 
-import "github.com/jacky-htg/inventory/models"
+import "github.com/nirshpaa/godam-backend/models"
 
 // NewCustomerRequest is json request for new customer and validation
 type NewCustomerRequest struct {

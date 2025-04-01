@@ -14,10 +14,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nishanpandit/inventory/libraries/api"
-	"github.com/nishanpandit/inventory/models"
-	"github.com/nishanpandit/inventory/services"
-	// "github.com/jacky-htg/inventory/services"
+	"github.com/nirshpaa/godam-backend/libraries/api"
+	"github.com/nirshpaa/godam-backend/models"
+	"github.com/nirshpaa/godam-backend/services"
+	// "github.com/nirshpaa/godam-backend/services"
 )
 
 // ProductImageHandler processes image uploads for products

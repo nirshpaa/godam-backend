@@ -3,7 +3,7 @@ package response
 import (
 	"time"
 
-	"github.com/jacky-htg/inventory/models"
+	"github.com/nirshpaa/godam-backend/models"
 )
 
 // PurchaseResponse : format json response for purchase

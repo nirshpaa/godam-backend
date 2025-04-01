@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/jacky-htg/inventory/libraries/api"
-	"github.com/jacky-htg/inventory/libraries/database"
+	"github.com/nirshpaa/godam-backend/libraries/api"
+	"github.com/nirshpaa/godam-backend/libraries/database"
 )
 
 //Checks : struct for set Checks Dependency Injection

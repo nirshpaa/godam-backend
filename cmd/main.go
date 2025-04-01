@@ -7,10 +7,10 @@ import (
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jacky-htg/inventory/libraries/auth"
-	"github.com/jacky-htg/inventory/libraries/config"
-	"github.com/jacky-htg/inventory/libraries/database"
-	"github.com/jacky-htg/inventory/schema"
+	"github.com/nirshpaa/godam-backend/libraries/auth"
+	"github.com/nirshpaa/godam-backend/libraries/config"
+	"github.com/nirshpaa/godam-backend/libraries/database"
+	"github.com/nirshpaa/godam-backend/schema"
 )
 
 func main() {

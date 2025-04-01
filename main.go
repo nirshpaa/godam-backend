@@ -8,7 +8,7 @@ import (
 	firebase "firebase.google.com/go/v4"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/nishanpandit/inventory/routing"
+	"github.com/nirshpaa/godam-backend/routing"
 	"google.golang.org/api/option"
 )
 

@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/jacky-htg/inventory/libraries/api"
+	"github.com/nirshpaa/godam-backend/libraries/api"
 )
 
-//Role : struct of Role
+// Role : struct of Role
 type Role struct {
 	ID   uint32
 	Name string
@@ -16,7 +16,7 @@ type Role struct {
 
 const qRoles = `SELECT id, name FROM roles`
 
-//List of roles
+// List of roles
 func (u *Role) List(ctx context.Context, db *sql.DB) ([]Role, error) {
 	list := []Role{}
 
@@ -48,12 +48,12 @@ func (u *Role) List(ctx context.Context, db *sql.DB) ([]Role, error) {
 	return list, nil
 }
 
-//Get role by id
+// Get role by id
 func (u *Role) Get(ctx context.Context, db *sql.DB) error {
 	return db.QueryRowContext(ctx, qRoles+" WHERE id=? AND company_id=?", u.ID, ctx.Value(api.Ctx("auth")).(User).Company.ID).Scan(u.getArgs()...)
 }
 
-//Create new role
+// Create new role
 func (u *Role) Create(ctx context.Context, db *sql.DB) error {
 	const query = `
 		INSERT INTO roles (name, company_id, created)
@@ -81,7 +81,7 @@ func (u *Role) Create(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-//Update role
+// Update role
 func (u *Role) Update(ctx context.Context, db *sql.DB) error {
 
 	stmt, err := db.PrepareContext(ctx, `
@@ -100,7 +100,7 @@ func (u *Role) Update(ctx context.Context, db *sql.DB) error {
 	return err
 }
 
-//Delete role
+// Delete role
 func (u *Role) Delete(ctx context.Context, db *sql.DB) error {
 	stmt, err := db.PrepareContext(ctx, `DELETE FROM roles WHERE id = ? AND company_id = ?`)
 	if err != nil {
@@ -113,7 +113,7 @@ func (u *Role) Delete(ctx context.Context, db *sql.DB) error {
 	return err
 }
 
-//Grant access to role
+// Grant access to role
 func (u *Role) Grant(ctx context.Context, db *sql.DB, accessID uint32) error {
 	stmt, err := db.PrepareContext(ctx, `INSERT INTO access_roles (access_id, role_id) VALUES (?, ?)`)
 	if err != nil {
@@ -126,7 +126,7 @@ func (u *Role) Grant(ctx context.Context, db *sql.DB, accessID uint32) error {
 	return err
 }
 
-//Revoke access from role
+// Revoke access from role
 func (u *Role) Revoke(ctx context.Context, db *sql.DB, accessID uint32) error {
 	stmt, err := db.PrepareContext(ctx, `DELETE FROM access_roles WHERE access_id= ? AND role_id = ?`)
 	if err != nil {

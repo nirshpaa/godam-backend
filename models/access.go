@@ -5,11 +5,11 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/jacky-htg/inventory/libraries/api"
-	"github.com/jacky-htg/inventory/libraries/token"
+	"github.com/nirshpaa/godam-backend/libraries/api"
+	"github.com/nirshpaa/godam-backend/libraries/token"
 )
 
-//Access : struct of Access
+// Access : struct of Access
 type Access struct {
 	ID       uint32
 	ParentID sql.NullInt64
@@ -19,7 +19,7 @@ type Access struct {
 
 const qAccess = `SELECT id, parent_id, name, alias FROM access`
 
-//List of access
+// List of access
 func (u *Access) List(ctx context.Context, tx *sql.Tx) ([]Access, error) {
 	list := []Access{}
 
@@ -51,22 +51,22 @@ func (u *Access) List(ctx context.Context, tx *sql.Tx) ([]Access, error) {
 	return list, nil
 }
 
-//GetByName : get access by name
+// GetByName : get access by name
 func (u *Access) GetByName(ctx context.Context, tx *sql.Tx) error {
 	return tx.QueryRowContext(ctx, qAccess+" WHERE name=?", u.Name).Scan(u.getArgs()...)
 }
 
-//GetByAlias : get access by alias
+// GetByAlias : get access by alias
 func (u *Access) GetByAlias(ctx context.Context, tx *sql.Tx) error {
 	return tx.QueryRowContext(ctx, qAccess+" WHERE alias=?", u.Alias).Scan(u.getArgs()...)
 }
 
-//Get : get access by id
+// Get : get access by id
 func (u *Access) Get(ctx context.Context, tx *sql.Tx) error {
 	return tx.QueryRowContext(ctx, qAccess+" WHERE id=?", u.ID).Scan(u.getArgs()...)
 }
 
-//Create new Access
+// Create new Access
 func (u *Access) Create(ctx context.Context, tx *sql.Tx) error {
 	const query = `
 		INSERT INTO access (parent_id, name, alias, created)
@@ -94,7 +94,7 @@ func (u *Access) Create(ctx context.Context, tx *sql.Tx) error {
 	return nil
 }
 
-//Delete : delete access
+// Delete : delete access
 func (u *Access) Delete(ctx context.Context, tx *sql.Tx) error {
 	stmt, err := tx.PrepareContext(ctx, `DELETE FROM access WHERE id = ?`)
 	if err != nil {

@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/nishanpandit/inventory/libraries/api"
+	"github.com/nirshpaa/godam-backend/libraries/api"
 )
 
 // UpdateImage updates only the image-related fields of a product

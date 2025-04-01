@@ -3,7 +3,7 @@ package request
 import (
 	"time"
 
-	"github.com/jacky-htg/inventory/models"
+	"github.com/nirshpaa/godam-backend/models"
 )
 
 // NewDeliveryRequest : format json request for new Delivery

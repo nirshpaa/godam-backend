@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jacky-htg/inventory/libraries/api"
-	"github.com/jacky-htg/inventory/libraries/array"
+	"github.com/nirshpaa/godam-backend/libraries/api"
+	"github.com/nirshpaa/godam-backend/libraries/array"
 )
 
 // SalesOrder : struct of SalesOrder

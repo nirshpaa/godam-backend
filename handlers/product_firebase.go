@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nishanpandit/inventory/models"
+	"github.com/nirshpaa/godam-backend/models"
 )
 
 type ProductHandler struct {

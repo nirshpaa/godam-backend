@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/jacky-htg/inventory/libraries/api"
+	"github.com/nirshpaa/godam-backend/libraries/api"
 )
 
 // Salesman : struct of salesman

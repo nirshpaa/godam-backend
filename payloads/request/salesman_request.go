@@ -1,6 +1,6 @@
 package request
 
-import "github.com/jacky-htg/inventory/models"
+import "github.com/nirshpaa/godam-backend/models"
 
 // NewSalesmanRequest is json request for new salesman and validation
 type NewSalesmanRequest struct {

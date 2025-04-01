@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/jacky-htg/inventory/libraries/api"
-	"github.com/jacky-htg/inventory/models"
-	"github.com/jacky-htg/inventory/payloads/response"
+	"github.com/nirshpaa/godam-backend/libraries/api"
+	"github.com/nirshpaa/godam-backend/models"
+	"github.com/nirshpaa/godam-backend/payloads/response"
 )
 
 //Access : struct for set Access Dependency Injection

@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	apiTest "github.com/nishanpandit/inventory/controllers/tests"
-	"github.com/nishanpandit/inventory/libraries/config"
-	"github.com/nishanpandit/inventory/routing"
-	"github.com/nishanpandit/inventory/schema"
-	testUtil "github.com/nishanpandit/inventory/tests"
+	apiTest "github.com/nirshpaa/godam-backend/controllers/tests"
+	"github.com/nirshpaa/godam-backend/libraries/config"
+	"github.com/nirshpaa/godam-backend/routing"
+	"github.com/nirshpaa/godam-backend/schema"
+	testUtil "github.com/nirshpaa/godam-backend/tests"
 )
 
 var token string

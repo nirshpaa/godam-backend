@@ -1,6 +1,6 @@
 package request
 
-import "github.com/jacky-htg/inventory/models"
+import "github.com/nirshpaa/godam-backend/models"
 
 // NewShelveRequest is json request for new Shelve
 type NewShelveRequest struct {

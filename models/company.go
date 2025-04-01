@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/jacky-htg/inventory/libraries/api"
+	"github.com/nirshpaa/godam-backend/libraries/api"
 )
 
-//Company : struct of Company
+// Company : struct of Company
 type Company struct {
 	ID      uint32
 	Code    string
@@ -18,7 +18,7 @@ type Company struct {
 
 const qCompanies = `SELECT id, code, name, address FROM companies`
 
-//List of companies
+// List of companies
 func (u *Company) List(ctx context.Context, db *sql.DB) ([]Company, error) {
 	list := []Company{}
 
@@ -50,12 +50,12 @@ func (u *Company) List(ctx context.Context, db *sql.DB) ([]Company, error) {
 	return list, nil
 }
 
-//Get company by id
+// Get company by id
 func (u *Company) Get(ctx context.Context, db *sql.DB) error {
 	return db.QueryRowContext(ctx, qCompanies+" WHERE id=?", u.ID).Scan(u.getArgs()...)
 }
 
-//Create new company
+// Create new company
 func (u *Company) Create(ctx context.Context, db *sql.DB) error {
 	const query = `
 		INSERT INTO companies (code, name, address, created)
@@ -83,7 +83,7 @@ func (u *Company) Create(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-//Update company
+// Update company
 func (u *Company) Update(ctx context.Context, db *sql.DB) error {
 
 	stmt, err := db.PrepareContext(ctx, `
@@ -103,7 +103,7 @@ func (u *Company) Update(ctx context.Context, db *sql.DB) error {
 	return err
 }
 
-//Delete company
+// Delete company
 func (u *Company) Delete(ctx context.Context, db *sql.DB) error {
 	stmt, err := db.PrepareContext(ctx, `DELETE FROM companies WHERE id = ?`)
 	if err != nil {

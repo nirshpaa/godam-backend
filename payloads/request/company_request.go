@@ -3,7 +3,7 @@ package request
 import (
 	"database/sql"
 
-	"github.com/jacky-htg/inventory/models"
+	"github.com/nirshpaa/godam-backend/models"
 )
 
 //NewCompanyRequest : format json request for new company

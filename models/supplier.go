@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/jacky-htg/inventory/libraries/api"
+	"github.com/nirshpaa/godam-backend/libraries/api"
 )
 
 // Supplier : struct of Supplier

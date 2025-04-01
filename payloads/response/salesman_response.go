@@ -1,6 +1,6 @@
 package response
 
-import "github.com/jacky-htg/inventory/models"
+import "github.com/nirshpaa/godam-backend/models"
 
 // SalesmanResponse json
 type SalesmanResponse struct {

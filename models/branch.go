@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/jacky-htg/inventory/libraries/api"
+	"github.com/nirshpaa/godam-backend/libraries/api"
 )
 
-//Branch : struct of Branch
+// Branch : struct of Branch
 type Branch struct {
 	ID      uint32
 	Code    string

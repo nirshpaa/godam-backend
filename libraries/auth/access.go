@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/jacky-htg/inventory/libraries/array"
-	"github.com/jacky-htg/inventory/models"
+	"github.com/nirshpaa/godam-backend/libraries/array"
+	"github.com/nirshpaa/godam-backend/models"
 )
 
 var aStr array.ArrString

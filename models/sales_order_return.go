@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jacky-htg/inventory/libraries/api"
-	"github.com/jacky-htg/inventory/libraries/array"
+	"github.com/nirshpaa/godam-backend/libraries/api"
+	"github.com/nirshpaa/godam-backend/libraries/array"
 )
 
 // SalesOrderReturn : struct of SalesOrderReturn
@@ -499,7 +499,7 @@ func (u *SalesOrderReturn) storeDetail(ctx context.Context, tx *sql.Tx, d SalesO
 		FROM sales_order_details 
 		JOIN sales_orders ON sales_order_details.sales_order_id = sales_orders.id
 		LEFT JOIN sales_order_returns ON sales_orders.id = sales_order_returns.sales_order_id
-		LEFT JOIN sales_order_return_details ON sales_order_returns.id = sales_order_return_details.sales_order_return_id AND sales_order_details.product_id = sales_order_return_details.product_id
+		LEFT JOIN sales_order_return_details ON sales_orders.id = sales_order_return_details.sales_order_id AND sales_order_details.product_id = sales_order_return_details.product_id
 		WHERE sales_order_details.sales_order_id=? AND sales_order_details.product_id=?
 		AND sales_orders.company_id=? AND sales_orders.branch_id=?
 		GROUP BY sales_order_details.product_id

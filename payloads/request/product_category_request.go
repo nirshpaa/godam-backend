@@ -3,7 +3,7 @@ package request
 import (
 	"strconv"
 
-	"github.com/jacky-htg/inventory/models"
+	"github.com/nirshpaa/godam-backend/models"
 )
 
 // NewProductCategoryRequest is json request for new ProductCategory and validation

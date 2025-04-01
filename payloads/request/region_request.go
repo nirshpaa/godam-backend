@@ -1,7 +1,7 @@
 package request
 
 import (
-	"github.com/jacky-htg/inventory/models"
+	"github.com/nirshpaa/godam-backend/models"
 )
 
 //NewRegionRequest : format json request for new region

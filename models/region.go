@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/jacky-htg/inventory/libraries/api"
+	"github.com/nirshpaa/godam-backend/libraries/api"
 )
 
-//Region : struct of Region
+// Region : struct of Region
 type Region struct {
 	ID      uint32
 	Code    string
@@ -27,7 +27,7 @@ FROM regions
 JOIN companies ON regions.company_id = companies.id
 `
 
-//List of regions
+// List of regions
 func (u *Region) List(ctx context.Context, db *sql.DB) ([]Region, error) {
 	list := []Region{}
 
@@ -59,12 +59,12 @@ func (u *Region) List(ctx context.Context, db *sql.DB) ([]Region, error) {
 	return list, nil
 }
 
-//Get region by id
+// Get region by id
 func (u *Region) Get(ctx context.Context, db *sql.DB) error {
 	return db.QueryRowContext(ctx, qRegions+" WHERE regions.id=? AND companies.id=?", u.ID, ctx.Value(api.Ctx("auth")).(User).Company.ID).Scan(u.getArgs()...)
 }
 
-//Create new region
+// Create new region
 func (u *Region) Create(ctx context.Context, db *sql.DB) error {
 	userLogin := ctx.Value(api.Ctx("auth")).(User)
 	const query = `
@@ -94,7 +94,7 @@ func (u *Region) Create(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-//Update region
+// Update region
 func (u *Region) Update(ctx context.Context, db *sql.DB) error {
 
 	stmt, err := db.PrepareContext(ctx, `
@@ -114,7 +114,7 @@ func (u *Region) Update(ctx context.Context, db *sql.DB) error {
 	return err
 }
 
-//Delete region
+// Delete region
 func (u *Region) Delete(ctx context.Context, db *sql.DB) error {
 	stmt, err := db.PrepareContext(ctx, `DELETE FROM regions WHERE id = ? AND company_id = ?`)
 	if err != nil {
@@ -127,7 +127,7 @@ func (u *Region) Delete(ctx context.Context, db *sql.DB) error {
 	return err
 }
 
-//AddBranch to region
+// AddBranch to region
 func (u *Region) AddBranch(ctx context.Context, tx *sql.Tx, branchID uint32) error {
 	stmt, err := tx.PrepareContext(ctx, `INSERT INTO branches_regions (branch_id, region_id) VALUES (?, ?)`)
 	if err != nil {
@@ -137,7 +137,7 @@ func (u *Region) AddBranch(ctx context.Context, tx *sql.Tx, branchID uint32) err
 	return err
 }
 
-//DeleteBranch from region
+// DeleteBranch from region
 func (u *Region) DeleteBranch(ctx context.Context, tx *sql.Tx, branchID uint32) error {
 	stmt, err := tx.PrepareContext(ctx, `DELETE FROM branches_regions WHERE branch_id= ? AND region_id = ?`)
 	if err != nil {

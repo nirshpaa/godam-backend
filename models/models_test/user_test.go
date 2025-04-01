@@ -8,11 +8,11 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/go-cmp/cmp"
-	"github.com/jacky-htg/inventory/libraries/api"
-	"github.com/jacky-htg/inventory/libraries/config"
-	"github.com/jacky-htg/inventory/models"
-	"github.com/jacky-htg/inventory/schema"
-	"github.com/jacky-htg/inventory/tests"
+	"github.com/nirshpaa/godam-backend/libraries/api"
+	"github.com/nirshpaa/godam-backend/libraries/config"
+	"github.com/nirshpaa/godam-backend/models"
+	"github.com/nirshpaa/godam-backend/schema"
+	"github.com/nirshpaa/godam-backend/tests"
 )
 
 // User struct for test users
@@ -45,7 +45,7 @@ func TestMain(t *testing.T) {
 	t.Run("Crud", user.Crud)
 }
 
-//Crud : unit test  for create get and delete user function
+// Crud : unit test  for create get and delete user function
 func (u *User) Crud(t *testing.T) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, api.Ctx("auth"), u.UserLogin)
@@ -114,7 +114,7 @@ func (u *User) Crud(t *testing.T) {
 	}
 }
 
-//List : unit test for user list function
+// List : unit test for user list function
 func (u *User) List(t *testing.T) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, api.Ctx("auth"), u.UserLogin)

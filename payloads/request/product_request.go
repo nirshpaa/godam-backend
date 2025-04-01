@@ -3,7 +3,7 @@ package request
 import (
 	"strconv"
 
-	"github.com/jacky-htg/inventory/models"
+	"github.com/nirshpaa/godam-backend/models"
 )
 
 // NewProductRequest : format json request for new product
