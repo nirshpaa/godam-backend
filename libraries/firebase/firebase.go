@@ -2,44 +2,41 @@ package firebase
 
 import (
 	"context"
-	"log"
-	"os"
+	"fmt"
 
+	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go/v4"
-	"firebase.google.com/go/v4/db"
 	"google.golang.org/api/option"
 )
 
 var (
 	app      *firebase.App
-	dbClient *db.Client
+	fsClient *firestore.Client
 )
 
 // Initialize Firebase
-func Initialize() error {
-	ctx := context.Background()
+func Initialize() (*firebase.App, error) {
+	opt := option.WithCredentialsFile("firebase-credentials.json")
 
-	// Initialize Firebase with credentials
-	opt := option.WithCredentialsFile(os.Getenv("FIREBASE_CREDENTIALS_FILE"))
+	// Initialize Firebase app
 	var err error
-	app, err = firebase.NewApp(ctx, nil, opt)
+	app, err = firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("error initializing Firebase app: %v", err)
 	}
 
-	// Initialize Realtime Database
-	dbClient, err = app.Database(ctx)
+	// Initialize Firestore client
+	fsClient, err = app.Firestore(context.Background())
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("error initializing Firestore client: %v", err)
 	}
 
-	log.Println("Firebase initialized successfully")
-	return nil
+	return app, nil
 }
 
-// GetDB returns the Firebase database client
-func GetDB() *db.Client {
-	return dbClient
+// GetFirestore returns the Firestore client
+func GetFirestore() *firestore.Client {
+	return fsClient
 }
 
 // GetApp returns the Firebase app instance

@@ -4,47 +4,42 @@ import "github.com/nirshpaa/godam-backend/models"
 
 // NewCustomerRequest is json request for new customer and validation
 type NewCustomerRequest struct {
-	Name    string `json:"name" validate:"required"`
-	Email   string `json:"email" validate:"required"`
-	Address string `json:"address" validate:"required"`
-	Hp      string `json:"hp" validate:"required"`
+	Name      string `json:"name" validate:"required"`
+	Email     string `json:"email" validate:"required"`
+	Address   string `json:"address" validate:"required"`
+	Phone     string `json:"phone" validate:"required"`
+	CompanyID string `json:"company_id" validate:"required"`
 }
 
-// Transform NewCustomerRequest to Customer model
-func (u *NewCustomerRequest) Transform() models.Customer {
-	var c models.Customer
-	c.Name = u.Name
-	c.Email = u.Email
-	c.Address = u.Address
-	c.Hp = u.Hp
-
-	return c
+// Transform NewCustomerRequest to FirebaseCustomer model
+func (u *NewCustomerRequest) Transform() *models.FirebaseCustomer {
+	return &models.FirebaseCustomer{
+		Name:      u.Name,
+		Email:     u.Email,
+		Address:   u.Address,
+		Phone:     u.Phone,
+		CompanyID: u.CompanyID,
+	}
 }
 
 // CustomerRequest is json request for update customer and validation
 type CustomerRequest struct {
-	ID      uint64 `json:"id" validate:"required"`
-	Name    string `json:"name"`
-	Email   string `json:"email"`
-	Address string `json:"address"`
-	Hp      string `json:"hp"`
+	ID        string `json:"id" validate:"required"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Address   string `json:"address"`
+	Phone     string `json:"phone"`
+	CompanyID string `json:"company_id"`
 }
 
-// Transform CustomerRequest to Customer model
-func (u *CustomerRequest) Transform(c *models.Customer) *models.Customer {
-	if c.ID == u.ID {
-		if len(u.Name) > 0 {
-			c.Name = u.Name
-		}
-		if len(u.Email) > 0 {
-			c.Email = u.Email
-		}
-		if len(u.Address) > 0 {
-			c.Address = u.Address
-		}
-		if len(u.Hp) > 0 {
-			c.Hp = u.Hp
-		}
+// Transform CustomerRequest to FirebaseCustomer model
+func (u *CustomerRequest) Transform() *models.FirebaseCustomer {
+	return &models.FirebaseCustomer{
+		ID:        u.ID,
+		Name:      u.Name,
+		Email:     u.Email,
+		Address:   u.Address,
+		Phone:     u.Phone,
+		CompanyID: u.CompanyID,
 	}
-	return c
 }

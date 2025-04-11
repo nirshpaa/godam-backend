@@ -1,16 +1,17 @@
 package main
 
 import (
+	"context"
 	"net/http/httptest"
 	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nirshpaa/godam-backend/cmd/server/setup"
 	apiTest "github.com/nirshpaa/godam-backend/controllers/tests"
 	"github.com/nirshpaa/godam-backend/libraries/config"
-	"github.com/nirshpaa/godam-backend/routing"
-	"github.com/nirshpaa/godam-backend/schema"
-	testUtil "github.com/nirshpaa/godam-backend/tests"
+	"github.com/nirshpaa/godam-backend/libraries/firebase"
+	"github.com/nirshpaa/godam-backend/services"
 )
 
 var token string
@@ -21,10 +22,15 @@ func TestMain(t *testing.T) {
 		config.Setup(".env")
 	}
 
-	db, teardown := testUtil.NewUnit(t)
-	defer teardown()
+	// Initialize Firebase
+	_, err := firebase.Initialize()
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	if err := schema.Seed(db); err != nil {
+	// Create Firebase service
+	firebaseService, err := services.NewFirebaseService(context.Background(), "firebase-credentials.json")
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -33,7 +39,7 @@ func TestMain(t *testing.T) {
 	router := gin.New()
 
 	// Setup routes
-	router.Use(routing.SetupRoutes())
+	setup.SetupRoutes(router, firebaseService)
 
 	// Create a test server
 	ts := httptest.NewServer(router)

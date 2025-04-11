@@ -3,88 +3,104 @@ package request
 import (
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/nirshpaa/godam-backend/models"
 )
 
-// NewDeliveryReturnRequest : format json request for new Delivery return
+// NewDeliveryReturnRequest represents a new delivery return request
 type NewDeliveryReturnRequest struct {
-	Date                  string                           `json:"date" validate:"required"`
+	Date                  time.Time                        `json:"date" binding:"required"`
 	Remark                string                           `json:"remark"`
-	DeliveryReturnDetails []NewDeliveryReturnDetailRequest `json:"delivery_return_details" validate:"required"`
-	DeliveryID            uint64                           `json:"delivery" validate:"required"`
+	DeliveryReturnDetails []NewDeliveryReturnDetailRequest `json:"delivery_return_details" binding:"required"`
+	DeliveryID            string                           `json:"delivery_id" binding:"required"`
 }
 
-// Transform NewDeliveryReturnRequest to Delivery return
-func (u *NewDeliveryReturnRequest) Transform() *models.DeliveryReturn {
-	var p models.DeliveryReturn
-	p.Date, _ = time.Parse("2006-01-02", u.Date)
-	p.Delivery.ID = u.DeliveryID
-	p.Remark = u.Remark
-
-	for _, pd := range u.DeliveryReturnDetails {
-		p.DeliveryReturnDetails = append(p.DeliveryReturnDetails, pd.Transform())
-	}
-
-	return &p
-}
-
-// NewDeliveryReturnDetailRequest : format json request for Delivery return detail
+// NewDeliveryReturnDetailRequest represents a new delivery return detail request
 type NewDeliveryReturnDetailRequest struct {
-	ProductID uint64 `json:"product" validate:"required"`
-	Code      string `json:"code" validate:"required"`
+	ProductID string `json:"product_id" binding:"required"`
+	Qty       uint   `json:"qty" binding:"required"`
+	Code      string `json:"code" binding:"required"`
 }
 
-// Transform NewDeliveryDetailRequest to DeliveryDetail
-func (u *NewDeliveryReturnDetailRequest) Transform() models.DeliveryReturnDetail {
-	var pd models.DeliveryReturnDetail
-	pd.Qty = 1
-	pd.Product.ID = u.ProductID
-	pd.Code = u.Code
-
-	return pd
-}
-
-// DeliveryReturnRequest : format json request for Delivery return
+// DeliveryReturnRequest represents an update delivery return request
 type DeliveryReturnRequest struct {
-	ID                    uint64                        `json:"id" validate:"required"`
-	Date                  string                        `json:"date"`
+	ID                    string                        `json:"id" binding:"required"`
+	Date                  time.Time                     `json:"date" binding:"required"`
 	Remark                string                        `json:"remark"`
-	DeliveryReturnDetails []DeliveryReturnDetailRequest `json:"delivery_return_details"`
-	DeliveryID            uint64                        `json:"delivery"`
+	DeliveryReturnDetails []DeliveryReturnDetailRequest `json:"delivery_return_details" binding:"required"`
+	DeliveryID            string                        `json:"delivery_id" binding:"required"`
 }
 
-// Transform DeliveryReturnRequest to DeliveryReturn
-func (u *DeliveryReturnRequest) Transform(p *models.DeliveryReturn) *models.DeliveryReturn {
-	if u.ID == p.ID {
-		p.Date, _ = time.Parse("2006-01-02", u.Date)
-		p.Delivery.ID = u.DeliveryID
-		p.Remark = u.Remark
-
-		var details []models.DeliveryReturnDetail
-		for _, pd := range u.DeliveryReturnDetails {
-			details = append(details, pd.Transform())
-		}
-
-		p.DeliveryReturnDetails = details
-
-	}
-	return p
-}
-
-// DeliveryReturnDetailRequest : format json request for Delivery return detail
+// DeliveryReturnDetailRequest represents an update delivery return detail request
 type DeliveryReturnDetailRequest struct {
-	ID        uint64 `json:"id"`
-	ProductID uint64 `json:"product"`
-	Code      string `json:"code"`
+	ID        string `json:"id" binding:"required"`
+	ProductID string `json:"product_id" binding:"required"`
+	Qty       uint   `json:"qty" binding:"required"`
+	Code      string `json:"code" binding:"required"`
 }
 
-// Transform DeliveryReturnDetailRequest to DeliveryReturnDetail
-func (u *DeliveryReturnDetailRequest) Transform() models.DeliveryReturnDetail {
-	var pd models.DeliveryReturnDetail
-	pd.ID = u.ID
-	pd.Qty = 1
-	pd.Product.ID = u.ProductID
-	pd.Code = u.Code
+// Transform transforms the request into a model
+func (u *NewDeliveryReturnRequest) Transform() *models.FirebaseDeliveryReturn {
+	return &models.FirebaseDeliveryReturn{
+		Date:                  u.Date,
+		Remark:                u.Remark,
+		DeliveryID:            u.DeliveryID,
+		DeliveryReturnDetails: transformNewDeliveryReturnDetails(u.DeliveryReturnDetails),
+	}
+}
 
-	return pd
+// Transform transforms the request into a model
+func (u *NewDeliveryReturnDetailRequest) Transform() models.FirebaseDeliveryReturnDetail {
+	return models.FirebaseDeliveryReturnDetail{
+		ProductID: u.ProductID,
+		Qty:       u.Qty,
+		Code:      u.Code,
+	}
+}
+
+// Transform transforms the request into a model
+func (u *DeliveryReturnRequest) Transform() *models.FirebaseDeliveryReturn {
+	return &models.FirebaseDeliveryReturn{
+		ID:                    u.ID,
+		Date:                  u.Date,
+		Remark:                u.Remark,
+		DeliveryID:            u.DeliveryID,
+		DeliveryReturnDetails: transformDeliveryReturnDetails(u.DeliveryReturnDetails),
+	}
+}
+
+// Transform transforms the request into a model
+func (u *DeliveryReturnDetailRequest) Transform() models.FirebaseDeliveryReturnDetail {
+	return models.FirebaseDeliveryReturnDetail{
+		ID:        u.ID,
+		ProductID: u.ProductID,
+		Qty:       u.Qty,
+		Code:      u.Code,
+	}
+}
+
+func transformNewDeliveryReturnDetails(details []NewDeliveryReturnDetailRequest) []models.FirebaseDeliveryReturnDetail {
+	var result []models.FirebaseDeliveryReturnDetail
+	for _, detail := range details {
+		result = append(result, detail.Transform())
+	}
+	return result
+}
+
+func transformDeliveryReturnDetails(details []DeliveryReturnDetailRequest) []models.FirebaseDeliveryReturnDetail {
+	var result []models.FirebaseDeliveryReturnDetail
+	for _, detail := range details {
+		result = append(result, detail.Transform())
+	}
+	return result
+}
+
+// Validate validates the request
+func (u *NewDeliveryReturnRequest) Validate(c *gin.Context) error {
+	return c.ShouldBindJSON(u)
+}
+
+// Validate validates the request
+func (u *DeliveryReturnRequest) Validate(c *gin.Context) error {
+	return c.ShouldBindJSON(u)
 }

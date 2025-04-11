@@ -1,92 +1,67 @@
 package response
 
 import (
-	"time"
-
-	"github.com/nirshpaa/godam-backend/models"
+	"github.com/nirshpaa/godam-backend/types"
 )
 
-// SalesOrderResponse : format json response for sales order
+// SalesOrderResponse represents a sales order response
 type SalesOrderResponse struct {
-	ID                uint64                     `json:"id"`
-	Code              string                     `json:"code"`
-	Date              time.Time                  `json:"name"`
-	Price             float64                    `json:"price"`
-	Disc              float64                    `json:"disc"`
-	AdditionalDisc    float64                    `json:"additional_disc"`
-	Total             float64                    `json:"total"`
-	Salesman          SalesmanResponse           `json:"salesman"`
-	Customer          CustomerResponse           `json:"customer"`
-	Company           CompanyResponse            `json:"company"`
-	Branch            BranchResponse             `json:"branch"`
-	SalesOrderDetails []SalesOrderDetailResponse `json:"sales_order_details"`
+	ID                string                   `json:"id"`
+	Code              string                   `json:"code"`
+	Date              string                   `json:"date"`
+	CustomerID        string                   `json:"customer_id"`
+	SalesmanID        string                   `json:"salesman_id"`
+	TotalAmount       float64                  `json:"total_amount"`
+	Discount          float64                  `json:"discount"`
+	AdditionalDisc    float64                  `json:"additional_disc"`
+	Status            string                   `json:"status"`
+	SalesOrderDetails []types.SalesOrderDetail `json:"sales_order_details"`
 }
 
-// Transform from SalesOrder model to SalesOrderResponse
-func (u *SalesOrderResponse) Transform(salesOrder *models.SalesOrder) {
-	u.ID = salesOrder.ID
-	u.Code = salesOrder.Code
-	u.Date = salesOrder.Date
-	u.Price = salesOrder.Price
-	u.Disc = salesOrder.Disc
-	u.AdditionalDisc = salesOrder.AdditionalDisc
-	u.Total = salesOrder.Total
-	u.Salesman.Transform(&salesOrder.Salesman)
-	u.Customer.Transform(&salesOrder.Customer)
-	u.Company.Transform(&salesOrder.Company)
-	u.Branch.Transform(&salesOrder.Branch)
-
-	for _, d := range salesOrder.SalesOrderDetails {
-		var s SalesOrderDetailResponse
-		s.Transform(&d)
-		u.SalesOrderDetails = append(u.SalesOrderDetails, s)
+func NewSalesOrderResponse(order *types.SalesOrder) *SalesOrderResponse {
+	return &SalesOrderResponse{
+		ID:                order.ID,
+		Code:              order.Code,
+		Date:              order.Date,
+		CustomerID:        order.CustomerID,
+		SalesmanID:        order.SalesmanID,
+		TotalAmount:       order.TotalAmount,
+		Discount:          order.Discount,
+		AdditionalDisc:    order.AdditionalDisc,
+		Status:            order.Status,
+		SalesOrderDetails: order.SalesOrderDetails,
 	}
 }
 
-// SalesOrderListResponse : format json response for sales order list
+// SalesOrderListResponse represents a list of sales orders
 type SalesOrderListResponse struct {
-	ID             uint64           `json:"id"`
-	Code           string           `json:"code"`
-	Date           time.Time        `json:"date"`
-	Price          float64          `json:"price"`
-	Disc           float64          `json:"disc"`
-	AdditionalDisc float64          `json:"additional_disc"`
-	Total          float64          `json:"total"`
-	Salesman       SalesmanResponse `json:"salesman"`
-	Customer       CustomerResponse `json:"customer"`
-	Company        CompanyResponse  `json:"company"`
-	Branch         BranchResponse   `json:"branch"`
+	Data []SalesOrderResponse `json:"data"`
 }
 
-// Transform from SalesOrder model to Sales Order List response
-func (u *SalesOrderListResponse) Transform(salesOrder *models.SalesOrder) {
-	u.ID = salesOrder.ID
-	u.Code = salesOrder.Code
-	u.Date = salesOrder.Date
-	u.Price = salesOrder.Price
-	u.Disc = salesOrder.Disc
-	u.AdditionalDisc = salesOrder.AdditionalDisc
-	u.Total = salesOrder.Total
-	u.Salesman.Transform(&salesOrder.Salesman)
-	u.Customer.Transform(&salesOrder.Customer)
-	u.Company.Transform(&salesOrder.Company)
-	u.Branch.Transform(&salesOrder.Branch)
+// Transform converts a slice of FirebaseSalesOrder to a SalesOrderListResponse
+func (u *SalesOrderListResponse) Transform(orders []types.SalesOrder) {
+	u.Data = make([]SalesOrderResponse, len(orders))
+	for i, order := range orders {
+		u.Data[i] = *NewSalesOrderResponse(&order)
+	}
 }
 
-// SalesOrderDetailResponse : format json response for sales order detail
+// SalesOrderDetailResponse represents a sales order detail response
 type SalesOrderDetailResponse struct {
-	ID      uint64          `json:"id"`
-	Price   float64         `json:"price"`
-	Disc    float64         `json:"disc"`
-	Qty     uint            `json:"qty"`
-	Product ProductResponse `json:"product"`
+	ProductID   string  `json:"product_id"`
+	ProductCode string  `json:"product_code"`
+	Quantity    float64 `json:"quantity"`
+	UnitPrice   float64 `json:"unit_price"`
+	TotalPrice  float64 `json:"total_price"`
+	Discount    float64 `json:"discount"`
 }
 
-// Transform from SalesOrderDetail model to SalesOrderDetailResponse
-func (u *SalesOrderDetailResponse) Transform(sod *models.SalesOrderDetail) {
-	u.ID = sod.ID
-	u.Price = sod.Price
-	u.Disc = sod.Disc
-	u.Qty = sod.Qty
-	u.Product.Transform(&sod.Product)
+// Transform converts a SalesOrderDetail to a SalesOrderDetailResponse
+func (u *SalesOrderDetailResponse) Transform(sod *types.SalesOrderDetail) {
+	u.ProductID = sod.ProductID
+	u.ProductCode = sod.ProductCode
+	u.Quantity = sod.Quantity
+	u.UnitPrice = sod.UnitPrice
+	u.TotalPrice = sod.TotalPrice
+	u.Discount = sod.Discount
 }

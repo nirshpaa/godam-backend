@@ -4,16 +4,14 @@ import (
 	"github.com/nirshpaa/godam-backend/models"
 )
 
-// ShelveResponse : format json response for shelve
+// ShelveResponse json
 type ShelveResponse struct {
-	ID       uint64 `json:"id"`
-	Code     string `json:"code"`
-	Capacity uint   `json:"capacity"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
-//Transform from Shelve model to Shelve response
-func (u *ShelveResponse) Transform(shelve *models.Shelve) {
+// Transform Shelve models to Shelve response
+func (u *ShelveResponse) Transform(shelve *models.ShelveFirebaseModel) {
 	u.ID = shelve.ID
-	u.Code = shelve.Code
-	u.Capacity = shelve.Capacity
+	u.Name = shelve.Name
 }

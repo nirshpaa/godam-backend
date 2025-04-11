@@ -12,27 +12,12 @@ func Logger(logger *log.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		path := c.Request.URL.Path
-		raw := c.Request.URL.RawQuery
 
 		c.Next()
 
-		param := gin.LogFormatterParams{
-			Path:         path,
-			Method:       c.Request.Method,
-			StatusCode:   c.Writer.Status(),
-			Latency:      time.Since(start),
-			ClientIP:     c.ClientIP(),
-			RawQuery:     raw,
-			ErrorMessage: c.Errors.ByType(gin.ErrorTypePrivate).String(),
-		}
+		latency := time.Since(start)
+		statusCode := c.Writer.Status()
 
-		logger.Printf("[GIN] %s | %3d | %13v | %15s | %s | %s\n",
-			param.TimeStamp.Format("2006/01/02 - 15:04:05"),
-			param.StatusCode,
-			param.Latency,
-			param.ClientIP,
-			param.Method,
-			param.Path,
-		)
+		logger.Printf("[%s] %s %d %v", c.Request.Method, path, statusCode, latency)
 	}
 }

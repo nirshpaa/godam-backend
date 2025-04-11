@@ -5,37 +5,34 @@ import (
 	"net/http"
 	"strings"
 
-	firebase "firebase.google.com/go/v4"
-	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
+	"github.com/nirshpaa/godam-backend/services"
 )
 
-var authClient *auth.Client
+// contextKey is a custom type for context keys
+type contextKey string
 
-func init() {
-	app, err := firebase.NewApp(context.Background(), nil)
-	if err != nil {
-		panic(err)
-	}
+// UserIDKey is the key used to store the user ID in the context
+const UserIDKey contextKey = "userID"
 
-	authClient, err = app.Auth(context.Background())
-	if err != nil {
-		panic(err)
-	}
-}
-
-// Auth middleware validates Firebase ID tokens
-func Auth() gin.HandlerFunc {
+// AuthMiddleware validates Firebase ID tokens
+func AuthMiddleware(firebaseService *services.FirebaseService) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Skip auth for health check endpoint
+		if c.Request.URL.Path == "/health" {
+			c.Next()
+			return
+		}
+
+		// Get the Authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "No authorization header"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
 			c.Abort()
 			return
 		}
 
-		// Extract the token from the Authorization header
-		// Format: "Bearer <token>"
+		// Check if the header is in the format "Bearer <token>"
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header format"})
@@ -43,16 +40,29 @@ func Auth() gin.HandlerFunc {
 			return
 		}
 
+		// Verify the Firebase ID token using a background context
 		token := parts[1]
-		decodedToken, err := authClient.VerifyIDToken(context.Background(), token)
+		ctx := context.Background()
+		decodedToken, err := firebaseService.GetAuthClient().VerifyIDToken(ctx, token)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token: " + err.Error()})
 			c.Abort()
 			return
 		}
 
-		// Store the user ID in the context for later use
+		// Set the user ID in the context
 		c.Set("userID", decodedToken.UID)
 		c.Next()
 	}
+}
+
+// SetUserID sets the user ID in the context
+func SetUserID(ctx context.Context, userID string) context.Context {
+	return context.WithValue(ctx, UserIDKey, userID)
+}
+
+// GetUserID retrieves the user ID from the context
+func GetUserID(ctx context.Context) (string, bool) {
+	userID, ok := ctx.Value(UserIDKey).(string)
+	return userID, ok
 }

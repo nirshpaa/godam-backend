@@ -4,14 +4,14 @@ import (
 	"github.com/nirshpaa/godam-backend/models"
 )
 
-//RoleResponse : format json response for role
+// RoleResponse json
 type RoleResponse struct {
-	ID   uint32 `json:"id"`
+	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
-//Transform from Role model to Role response
-func (u *RoleResponse) Transform(role *models.Role) {
+// Transform Role models to Role response
+func (u *RoleResponse) Transform(role *models.RoleFirebaseModel) {
 	u.ID = role.ID
 	u.Name = role.Name
 }

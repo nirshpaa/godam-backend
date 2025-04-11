@@ -2,8 +2,6 @@ package request
 
 import "github.com/nirshpaa/godam-backend/models"
 
-import "database/sql"
-
 // NewSupplierRequest is json request for new supplier and validation
 type NewSupplierRequest struct {
 	Code    string `json:"code" validate:"required"`
@@ -16,15 +14,13 @@ func (u *NewSupplierRequest) Transform() models.Supplier {
 	var c models.Supplier
 	c.Code = u.Code
 	c.Name = u.Name
-	if len(u.Address) > 0 {
-		c.Address = sql.NullString{String: u.Address, Valid: true}
-	}
+	c.Address = u.Address
 	return c
 }
 
 // SupplierRequest is json request for update supplier and validation
 type SupplierRequest struct {
-	ID      uint64 `json:"id" validate:"required"`
+	ID      string `json:"id" validate:"required"`
 	Name    string `json:"name"`
 	Address string `json:"address"`
 }
@@ -36,7 +32,7 @@ func (u *SupplierRequest) Transform(c *models.Supplier) *models.Supplier {
 			c.Name = u.Name
 		}
 		if len(u.Address) > 0 {
-			c.Address = sql.NullString{String: u.Address, Valid: true}
+			c.Address = u.Address
 		}
 	}
 	return c

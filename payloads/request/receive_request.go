@@ -6,85 +6,90 @@ import (
 	"github.com/nirshpaa/godam-backend/models"
 )
 
-// NewReceiveRequest : format json request for new Receive
+// NewReceiveRequest represents a new receive request
 type NewReceiveRequest struct {
 	Date           string                    `json:"date" validate:"required"`
 	Remark         string                    `json:"remark"`
 	ReceiveDetails []NewReceiveDetailRequest `json:"receive_details" validate:"required"`
-	PurchaseID     uint64                    `json:"purchase" validate:"required"`
+	PurchaseID     string                    `json:"purchase" validate:"required"`
 }
 
-// Transform NewReceiveRequest to Receive
-func (u *NewReceiveRequest) Transform() *models.Receive {
-	var p models.Receive
+// Transform converts NewReceiveRequest to FirebaseReceive
+func (u *NewReceiveRequest) Transform() *models.FirebaseReceive {
+	var p models.FirebaseReceive
 	p.Date, _ = time.Parse("2006-01-02", u.Date)
-	p.Purchase.ID = u.PurchaseID
+	p.PurchaseID = u.PurchaseID
 	p.Remark = u.Remark
-
-	for _, pd := range u.ReceiveDetails {
-		p.ReceiveDetails = append(p.ReceiveDetails, pd.Transform())
-	}
-
+	p.ReceiveDetails = transformNewReceiveDetails(u.ReceiveDetails)
 	return &p
 }
 
-// NewReceiveDetailRequest : format json request for Receive detail
+// NewReceiveDetailRequest represents a new receive detail request
 type NewReceiveDetailRequest struct {
-	ProductID uint64 `json:"product" validate:"required"`
-	ShelveID  uint64 `json:"shelve" validate:"required"`
+	ProductID string `json:"product" validate:"required"`
+	ShelveID  string `json:"shelve" validate:"required"`
 }
 
-// Transform NewReceiveDetailRequest to ReceiveDetail
-func (u *NewReceiveDetailRequest) Transform() models.ReceiveDetail {
-	var pd models.ReceiveDetail
-	pd.Qty = 1
-	pd.Product.ID = u.ProductID
-	pd.Shelve.ID = u.ShelveID
-
-	return pd
+// Transform converts NewReceiveDetailRequest to FirebaseReceiveDetail
+func (u *NewReceiveDetailRequest) Transform() models.FirebaseReceiveDetail {
+	return models.FirebaseReceiveDetail{
+		ProductID: u.ProductID,
+		ShelveID:  u.ShelveID,
+		Qty:       1,
+	}
 }
 
-// ReceiveRequest : format json request for Receive
+// ReceiveRequest represents a receive request
 type ReceiveRequest struct {
-	ID             uint64                 `json:"id" validate:"required"`
+	ID             string                 `json:"id" validate:"required"`
 	Date           string                 `json:"date"`
 	Remark         string                 `json:"remark"`
 	ReceiveDetails []ReceiveDetailRequest `json:"receive_details"`
-	PurchaseID     uint64                 `json:"purchase"`
+	PurchaseID     string                 `json:"purchase"`
 }
 
-// Transform ReceiveRequest to Receive
-func (u *ReceiveRequest) Transform(p *models.Receive) *models.Receive {
-	if u.ID == p.ID {
-		p.Date, _ = time.Parse("2006-01-02", u.Date)
-		p.Purchase.ID = u.PurchaseID
-		p.Remark = u.Remark
-
-		var details []models.ReceiveDetail
-		for _, pd := range u.ReceiveDetails {
-			details = append(details, pd.Transform())
-		}
-
-		p.ReceiveDetails = details
-
-	}
-	return p
+// Transform converts ReceiveRequest to FirebaseReceive
+func (u *ReceiveRequest) Transform() *models.FirebaseReceive {
+	var p models.FirebaseReceive
+	p.ID = u.ID
+	p.Date, _ = time.Parse("2006-01-02", u.Date)
+	p.PurchaseID = u.PurchaseID
+	p.Remark = u.Remark
+	p.ReceiveDetails = transformReceiveDetails(u.ReceiveDetails)
+	return &p
 }
 
-// ReceiveDetailRequest : format json request for Receive detail
+// ReceiveDetailRequest represents a receive detail request
 type ReceiveDetailRequest struct {
-	ID        uint64 `json:"id"`
-	ProductID uint64 `json:"product"`
-	ShelveID  uint64 `json:"shelve"`
+	ID        string `json:"id"`
+	ProductID string `json:"product"`
+	ShelveID  string `json:"shelve"`
 }
 
-// Transform ReceiveDetailRequest to ReceiveDetail
-func (u *ReceiveDetailRequest) Transform() models.ReceiveDetail {
-	var pd models.ReceiveDetail
-	pd.ID = u.ID
-	pd.Qty = 1
-	pd.Product.ID = u.ProductID
-	pd.Shelve.ID = u.ShelveID
+// Transform converts ReceiveDetailRequest to FirebaseReceiveDetail
+func (u *ReceiveDetailRequest) Transform() models.FirebaseReceiveDetail {
+	return models.FirebaseReceiveDetail{
+		ID:        u.ID,
+		ProductID: u.ProductID,
+		ShelveID:  u.ShelveID,
+		Qty:       1,
+	}
+}
 
-	return pd
+// Helper function to transform new receive details
+func transformNewReceiveDetails(details []NewReceiveDetailRequest) []models.FirebaseReceiveDetail {
+	transformed := make([]models.FirebaseReceiveDetail, len(details))
+	for i, detail := range details {
+		transformed[i] = detail.Transform()
+	}
+	return transformed
+}
+
+// Helper function to transform receive details
+func transformReceiveDetails(details []ReceiveDetailRequest) []models.FirebaseReceiveDetail {
+	transformed := make([]models.FirebaseReceiveDetail, len(details))
+	for i, detail := range details {
+		transformed[i] = detail.Transform()
+	}
+	return transformed
 }

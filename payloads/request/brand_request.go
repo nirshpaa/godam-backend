@@ -1,38 +1,39 @@
 package request
 
-import "github.com/nirshpaa/godam-backend/models"
+import (
+	"github.com/nirshpaa/godam-backend/models"
+)
 
-// NewBrandRequest is json request for new Brand and validation
+// NewBrandRequest : format json request for new brand
 type NewBrandRequest struct {
-	Code string `json:"code" validate:"required"`
-	Name string `json:"name" validate:"required"`
+	Code      string `json:"code" validate:"required"`
+	Name      string `json:"name" validate:"required"`
+	CompanyID string `json:"company_id" validate:"required"`
 }
 
-// Transform NewBrandRequest to Brand model
-func (u *NewBrandRequest) Transform() models.Brand {
-	var c models.Brand
-	c.Code = u.Code
-	c.Name = u.Name
-
-	return c
-}
-
-// BrandRequest is json request for update Brand and validation
-type BrandRequest struct {
-	ID   uint64 `json:"id" validate:"required"`
-	Code string `json:"code"`
-	Name string `json:"name"`
-}
-
-// Transform BrandRequest to Brand model
-func (u *BrandRequest) Transform(c *models.Brand) *models.Brand {
-	if c.ID == u.ID {
-		if len(u.Name) > 0 {
-			c.Name = u.Name
-		}
-		if len(u.Code) > 0 {
-			c.Code = u.Code
-		}
+// Transform converts NewBrandRequest to BrandFirebaseModel
+func (b *NewBrandRequest) Transform() *models.BrandFirebaseModel {
+	return &models.BrandFirebaseModel{
+		Code:      b.Code,
+		Name:      b.Name,
+		CompanyID: b.CompanyID,
 	}
-	return c
+}
+
+// BrandRequest : format json request for brand
+type BrandRequest struct {
+	ID        string `json:"id,omitempty" validate:"required"`
+	Code      string `json:"code,omitempty" validate:"required"`
+	Name      string `json:"name,omitempty" validate:"required"`
+	CompanyID string `json:"company_id,omitempty" validate:"required"`
+}
+
+// Transform converts BrandRequest to BrandFirebaseModel
+func (b *BrandRequest) Transform() *models.BrandFirebaseModel {
+	return &models.BrandFirebaseModel{
+		ID:        b.ID,
+		Code:      b.Code,
+		Name:      b.Name,
+		CompanyID: b.CompanyID,
+	}
 }

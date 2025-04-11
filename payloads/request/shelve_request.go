@@ -1,39 +1,31 @@
 package request
 
-import "github.com/nirshpaa/godam-backend/models"
+import (
+	"github.com/nirshpaa/godam-backend/models"
+)
 
-// NewShelveRequest is json request for new Shelve
+// NewShelveRequest : format json request for new shelve
 type NewShelveRequest struct {
-	Code     string `json:"code" validate:"required"`
-	Capacity uint   `json:"capacity" validate:"required"`
+	Name string `json:"name" validate:"required"`
 }
 
-// Transform NewSehelveRequest to Shelve Model
-func (r *NewShelveRequest) Transform() models.Shelve {
-	var s models.Shelve
-	s.Code = r.Code
-	s.Capacity = r.Capacity
-	return s
-}
-
-// ShelveRequest is json request for update
-type ShelveRequest struct {
-	ID       uint64 `json:"id" validate:"required"`
-	Code     string `json:"code"`
-	Capacity uint   `json:"capacity"`
-}
-
-// Transform ShelveRequest to Shelve Model
-func (r *ShelveRequest) Transform(s *models.Shelve) *models.Shelve {
-	if s.ID == r.ID {
-		if len(r.Code) > 0 {
-			s.Code = r.Code
-		}
-
-		if r.Capacity != 0 {
-			s.Capacity = r.Capacity
-		}
+// Transform converts NewShelveRequest to ShelveFirebaseModel
+func (s *NewShelveRequest) Transform() *models.ShelveFirebaseModel {
+	return &models.ShelveFirebaseModel{
+		Name: s.Name,
 	}
+}
 
-	return s
+// ShelveRequest : format json request for shelve
+type ShelveRequest struct {
+	ID   string `json:"id,omitempty" validate:"required"`
+	Name string `json:"name,omitempty" validate:"required"`
+}
+
+// Transform converts ShelveRequest to ShelveFirebaseModel
+func (s *ShelveRequest) Transform() *models.ShelveFirebaseModel {
+	return &models.ShelveFirebaseModel{
+		ID:   s.ID,
+		Name: s.Name,
+	}
 }

@@ -6,85 +6,90 @@ import (
 	"github.com/nirshpaa/godam-backend/models"
 )
 
-// NewReceiveReturnRequest : format json request for new Receive return
+// NewReceiveReturnRequest represents a new receive return request
 type NewReceiveReturnRequest struct {
 	Date                 string                          `json:"date" validate:"required"`
 	Remark               string                          `json:"remark"`
 	ReceiveReturnDetails []NewReceiveReturnDetailRequest `json:"receive_return_details" validate:"required"`
-	ReceiveID            uint64                          `json:"receive" validate:"required"`
+	ReceiveID            string                          `json:"receive" validate:"required"`
 }
 
-// Transform NewReceiveReturnRequest to Receive return
-func (u *NewReceiveReturnRequest) Transform() *models.ReceiveReturn {
-	var p models.ReceiveReturn
+// Transform converts NewReceiveReturnRequest to FirebaseReceiveReturn
+func (u *NewReceiveReturnRequest) Transform() *models.FirebaseReceiveReturn {
+	var p models.FirebaseReceiveReturn
 	p.Date, _ = time.Parse("2006-01-02", u.Date)
-	p.Receive.ID = u.ReceiveID
+	p.ReceiveID = u.ReceiveID
 	p.Remark = u.Remark
-
-	for _, pd := range u.ReceiveReturnDetails {
-		p.ReceiveReturnDetails = append(p.ReceiveReturnDetails, pd.Transform())
-	}
-
+	p.ReceiveReturnDetails = transformNewReceiveReturnDetails(u.ReceiveReturnDetails)
 	return &p
 }
 
-// NewReceiveReturnDetailRequest : format json request for Receive return detail
+// NewReceiveReturnDetailRequest represents a new receive return detail request
 type NewReceiveReturnDetailRequest struct {
-	ProductID uint64 `json:"product" validate:"required"`
+	ProductID string `json:"product" validate:"required"`
 	Code      string `json:"code" validate:"required"`
 }
 
-// Transform NewReceiveDetailRequest to ReceiveDetail
-func (u *NewReceiveReturnDetailRequest) Transform() models.ReceiveReturnDetail {
-	var pd models.ReceiveReturnDetail
-	pd.Qty = 1
-	pd.Product.ID = u.ProductID
-	pd.Code = u.Code
-
-	return pd
+// Transform converts NewReceiveReturnDetailRequest to FirebaseReceiveReturnDetail
+func (u *NewReceiveReturnDetailRequest) Transform() models.FirebaseReceiveReturnDetail {
+	return models.FirebaseReceiveReturnDetail{
+		ProductID: u.ProductID,
+		Code:      u.Code,
+		Qty:       1,
+	}
 }
 
-// ReceiveReturnRequest : format json request for Receive return
+// ReceiveReturnRequest represents a receive return request
 type ReceiveReturnRequest struct {
-	ID                   uint64                       `json:"id" validate:"required"`
+	ID                   string                       `json:"id" validate:"required"`
 	Date                 string                       `json:"date"`
 	Remark               string                       `json:"remark"`
 	ReceiveReturnDetails []ReceiveReturnDetailRequest `json:"receive_return_details"`
-	ReceiveID            uint64                       `json:"receive"`
+	ReceiveID            string                       `json:"receive"`
 }
 
-// Transform ReceiveReturnRequest to ReceiveReturn
-func (u *ReceiveReturnRequest) Transform(p *models.ReceiveReturn) *models.ReceiveReturn {
-	if u.ID == p.ID {
-		p.Date, _ = time.Parse("2006-01-02", u.Date)
-		p.Receive.ID = u.ReceiveID
-		p.Remark = u.Remark
-
-		var details []models.ReceiveReturnDetail
-		for _, pd := range u.ReceiveReturnDetails {
-			details = append(details, pd.Transform())
-		}
-
-		p.ReceiveReturnDetails = details
-
-	}
-	return p
+// Transform converts ReceiveReturnRequest to FirebaseReceiveReturn
+func (u *ReceiveReturnRequest) Transform() *models.FirebaseReceiveReturn {
+	var p models.FirebaseReceiveReturn
+	p.ID = u.ID
+	p.Date, _ = time.Parse("2006-01-02", u.Date)
+	p.ReceiveID = u.ReceiveID
+	p.Remark = u.Remark
+	p.ReceiveReturnDetails = transformReceiveReturnDetails(u.ReceiveReturnDetails)
+	return &p
 }
 
-// ReceiveReturnDetailRequest : format json request for Receive return detail
+// ReceiveReturnDetailRequest represents a receive return detail request
 type ReceiveReturnDetailRequest struct {
-	ID        uint64 `json:"id"`
-	ProductID uint64 `json:"product"`
+	ID        string `json:"id"`
+	ProductID string `json:"product"`
 	Code      string `json:"code"`
 }
 
-// Transform ReceiveReturnDetailRequest to ReceiveReturnDetail
-func (u *ReceiveReturnDetailRequest) Transform() models.ReceiveReturnDetail {
-	var pd models.ReceiveReturnDetail
-	pd.ID = u.ID
-	pd.Qty = 1
-	pd.Product.ID = u.ProductID
-	pd.Code = u.Code
+// Transform converts ReceiveReturnDetailRequest to FirebaseReceiveReturnDetail
+func (u *ReceiveReturnDetailRequest) Transform() models.FirebaseReceiveReturnDetail {
+	return models.FirebaseReceiveReturnDetail{
+		ID:        u.ID,
+		ProductID: u.ProductID,
+		Code:      u.Code,
+		Qty:       1,
+	}
+}
 
-	return pd
+// Helper function to transform new receive return details
+func transformNewReceiveReturnDetails(details []NewReceiveReturnDetailRequest) []models.FirebaseReceiveReturnDetail {
+	transformed := make([]models.FirebaseReceiveReturnDetail, len(details))
+	for i, detail := range details {
+		transformed[i] = detail.Transform()
+	}
+	return transformed
+}
+
+// Helper function to transform receive return details
+func transformReceiveReturnDetails(details []ReceiveReturnDetailRequest) []models.FirebaseReceiveReturnDetail {
+	transformed := make([]models.FirebaseReceiveReturnDetail, len(details))
+	for i, detail := range details {
+		transformed[i] = detail.Transform()
+	}
+	return transformed
 }

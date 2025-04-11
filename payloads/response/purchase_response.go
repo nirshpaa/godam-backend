@@ -6,83 +6,71 @@ import (
 	"github.com/nirshpaa/godam-backend/models"
 )
 
-// PurchaseResponse : format json response for purchase
+// PurchaseResponse represents a purchase response
 type PurchaseResponse struct {
-	ID              uint64                   `json:"id"`
+	ID              string                   `json:"id"`
 	Code            string                   `json:"code"`
-	Date            time.Time                `json:"name"`
-	Price           float64                  `json:"price"`
-	Disc            float64                  `json:"disc"`
+	Date            time.Time                `json:"date"`
 	AdditionalDisc  float64                  `json:"additional_disc"`
-	Total           float64                  `json:"total"`
-	Supplier        SupplierResponse         `json:"supplier"`
-	Company         CompanyResponse          `json:"company"`
-	Branch          BranchResponse           `json:"branch"`
+	SupplierID      string                   `json:"supplier_id"`
+	CompanyID       string                   `json:"company_id"`
+	BranchID        string                   `json:"branch_id"`
 	PurchaseDetails []PurchaseDetailResponse `json:"purchase_details"`
 }
 
-// Transform from Purchase model to Purchase response
-func (u *PurchaseResponse) Transform(purchase *models.Purchase) {
-	u.ID = purchase.ID
-	u.Code = purchase.Code
-	u.Date = purchase.Date
-	u.Price = purchase.Price
-	u.Disc = purchase.Disc
-	u.AdditionalDisc = purchase.AdditionalDisc
-	u.Total = purchase.Total
-	u.Supplier.Transform(&purchase.Supplier)
-	u.Company.Transform(&purchase.Company)
-	u.Branch.Transform(&purchase.Branch)
+// PurchaseDetailResponse represents a purchase detail response
+type PurchaseDetailResponse struct {
+	ID        string                 `json:"id"`
+	ProductID string                 `json:"product_id"`
+	Price     float64                `json:"price"`
+	Disc      float64                `json:"disc"`
+	Qty       uint                   `json:"qty"`
+	Product   models.FirebaseProduct `json:"product"`
+}
 
-	for _, d := range purchase.PurchaseDetails {
-		var p PurchaseDetailResponse
-		p.Transform(&d)
-		u.PurchaseDetails = append(u.PurchaseDetails, p)
+// Transform transforms the model into a response
+func (r PurchaseResponse) Transform(p *models.FirebasePurchase) PurchaseResponse {
+	return PurchaseResponse{
+		ID:              p.ID,
+		Code:            p.Code,
+		Date:            p.Date,
+		AdditionalDisc:  p.AdditionalDisc,
+		SupplierID:      p.SupplierID,
+		CompanyID:       p.CompanyID,
+		BranchID:        p.BranchID,
+		PurchaseDetails: transformPurchaseDetails(p.PurchaseDetails),
 	}
 }
 
-// PurchaseListResponse : format json response for purchase list
+// Transform transforms the model into a response
+func (r PurchaseDetailResponse) Transform(p models.FirebasePurchaseDetail) PurchaseDetailResponse {
+	return PurchaseDetailResponse{
+		ID:        p.ID,
+		ProductID: p.ProductID,
+		Price:     p.Price,
+		Disc:      p.Disc,
+		Qty:       p.Qty,
+		Product:   p.Product,
+	}
+}
+
+func transformPurchaseDetails(details []models.FirebasePurchaseDetail) []PurchaseDetailResponse {
+	var result []PurchaseDetailResponse
+	for _, detail := range details {
+		result = append(result, PurchaseDetailResponse{}.Transform(detail))
+	}
+	return result
+}
+
+// PurchaseListResponse represents a list of purchases
 type PurchaseListResponse struct {
-	ID             uint64           `json:"id"`
-	Code           string           `json:"code"`
-	Date           time.Time        `json:"date"`
-	Price          float64          `json:"price"`
-	Disc           float64          `json:"disc"`
-	AdditionalDisc float64          `json:"additional_disc"`
-	Total          float64          `json:"total"`
-	Supplier       SupplierResponse `json:"supplier"`
-	Company        CompanyResponse  `json:"company"`
-	Branch         BranchResponse   `json:"branch"`
+	Purchases []PurchaseResponse `json:"purchases"`
 }
 
-// Transform from Purchase model to Purchase List response
-func (u *PurchaseListResponse) Transform(purchase *models.Purchase) {
-	u.ID = purchase.ID
-	u.Code = purchase.Code
-	u.Date = purchase.Date
-	u.Price = purchase.Price
-	u.Disc = purchase.Disc
-	u.AdditionalDisc = purchase.AdditionalDisc
-	u.Total = purchase.Total
-	u.Supplier.Transform(&purchase.Supplier)
-	u.Company.Transform(&purchase.Company)
-	u.Branch.Transform(&purchase.Branch)
-}
-
-// PurchaseDetailResponse : format json response for purchase detail
-type PurchaseDetailResponse struct {
-	ID      uint64          `json:"id"`
-	Price   float64         `json:"price"`
-	Disc    float64         `json:"disc"`
-	Qty     uint            `json:"qty"`
-	Product ProductResponse `json:"product"`
-}
-
-// Transform from PurchaseDetail model to PurchaseDetail response
-func (u *PurchaseDetailResponse) Transform(pd *models.PurchaseDetail) {
-	u.ID = pd.ID
-	u.Price = pd.Price
-	u.Disc = pd.Disc
-	u.Qty = pd.Qty
-	u.Product.Transform(&pd.Product)
+// Transform transforms the model into a response
+func (r PurchaseListResponse) Transform(purchases []models.FirebasePurchase) PurchaseListResponse {
+	for _, p := range purchases {
+		r.Purchases = append(r.Purchases, PurchaseResponse{}.Transform(&p))
+	}
+	return r
 }

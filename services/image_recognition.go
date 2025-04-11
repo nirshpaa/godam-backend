@@ -2,7 +2,7 @@ package services
 
 import (
 	"bytes"
-	"database/sql"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,14 +13,15 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"strings"
 
+	"cloud.google.com/go/firestore"
 	"github.com/disintegration/imaging"
+	"github.com/nirshpaa/godam-backend/types"
 )
 
-// ImageRecognitionService handles image analysis operations
+// ImageRecognitionService handles image processing and recognition
 type ImageRecognitionService struct {
-	Db                 *sql.DB
+	Client             *firestore.Client
 	BarcodeAPIEndpoint string
 	CNNAPIEndpoint     string
 }
@@ -34,52 +35,76 @@ type Product struct {
 
 // RecognitionResult represents the result of image processing
 type RecognitionResult struct {
-	RecognitionSuccess bool
-	RecognitionData    string
+	RecognitionSuccess bool   `json:"recognition_success"`
+	RecognitionData    string `json:"recognition_data"`
 }
 
 // NewImageRecognitionService creates a new image recognition service
-func NewImageRecognitionService(db *sql.DB, barcodeEndpoint, cnnEndpoint string) *ImageRecognitionService {
+func NewImageRecognitionService(client *firestore.Client, barcodeEndpoint, cnnEndpoint string) *ImageRecognitionService {
 	return &ImageRecognitionService{
-		Db:                 db,
+		Client:             client,
 		BarcodeAPIEndpoint: barcodeEndpoint,
 		CNNAPIEndpoint:     cnnEndpoint,
 	}
 }
 
-// ProcessImage processes an image file for barcode scanning and CNN recognition
-func (s *ImageRecognitionService) ProcessImage(imagePath string) (*RecognitionResult, error) {
-	// Try barcode scanning first
+// ProcessImage processes an image for product recognition
+func (s *ImageRecognitionService) ProcessImage(imagePath string) (*types.ImageRecognitionResult, error) {
+	// Try to scan barcode first
 	barcode, err := s.scanBarcode(imagePath)
-	if err != nil {
-		// If barcode scanning fails, try CNN recognition
-		recognitionData, err := s.recognizeImage(imagePath)
-		if err != nil {
-			return &RecognitionResult{
-				RecognitionSuccess: false,
-				RecognitionData:    "",
-			}, err
+	if err == nil && barcode != "" {
+		// If barcode is found, try to find the product
+		productID, err := s.FindProductByBarcode(barcode)
+		if err == nil && productID != "" {
+			return &types.ImageRecognitionResult{
+				Success: true,
+				Data:    productID,
+			}, nil
 		}
-		return &RecognitionResult{
-			RecognitionSuccess: true,
-			RecognitionData:    recognitionData,
-		}, nil
 	}
 
-	// If barcode is found, look up product
-	productJSON, err := s.FindProductByBarcode(barcode)
+	// If barcode scanning fails, try CNN recognition
+	recognitionData, err := s.recognizeImage(imagePath)
 	if err != nil {
-		// If product not found, return create product suggestion
-		return &RecognitionResult{
-			RecognitionSuccess: true,
-			RecognitionData:    fmt.Sprintf(`{"action":"create_product","barcode":"%s"}`, barcode),
+		return &types.ImageRecognitionResult{
+			Success: false,
+			Data:    "",
+		}, fmt.Errorf("failed to recognize image: %v", err)
+	}
+
+	// Parse the recognition data
+	var data struct {
+		Class      string  `json:"class"`
+		Confidence float64 `json:"confidence"`
+	}
+	if err := json.Unmarshal([]byte(recognitionData), &data); err != nil {
+		return &types.ImageRecognitionResult{
+			Success: false,
+			Data:    recognitionData,
 		}, nil
 	}
 
-	// Return existing product data
-	return &RecognitionResult{
-		RecognitionSuccess: true,
-		RecognitionData:    productJSON,
+	// If confidence is above 0.5, try to find the product
+	if data.Confidence > 0.5 {
+		productID, err := s.FindProductByName(data.Class)
+		if err == nil && productID != "" {
+			return &types.ImageRecognitionResult{
+				Success: true,
+				Data:    productID,
+			}, nil
+		}
+	}
+
+	// If no product found or confidence is low, return create product action
+	createProductData := map[string]interface{}{
+		"action":         "create_product",
+		"suggested_name": data.Class,
+		"confidence":     data.Confidence,
+	}
+	jsonData, _ := json.Marshal(createProductData)
+	return &types.ImageRecognitionResult{
+		Success: false,
+		Data:    string(jsonData),
 	}, nil
 }
 
@@ -91,8 +116,11 @@ func (s *ImageRecognitionService) scanBarcode(imagePath string) (string, error) 
 
 // recognizeImage uses CNN to recognize the image
 func (s *ImageRecognitionService) recognizeImage(imagePath string) (string, error) {
-	// Implementation of CNN recognition
-	return `{"action":"create_product","suggested_name":"Unknown Product","confidence":0.0}`, nil
+	result, err := s.recognizeWithCNN(imagePath)
+	if err != nil {
+		return "", err
+	}
+	return result.RecognitionData, nil
 }
 
 // ScanBarcode attempts to detect and read a barcode from an image
@@ -243,107 +271,75 @@ func (s *ImageRecognitionService) recognizeWithCNN(filePath string) (*Recognitio
 	return &result, nil
 }
 
-// FindProductByBarcode attempts to find a product by its barcode
+// FindProductByBarcode finds a product by its barcode in Firestore
 func (s *ImageRecognitionService) FindProductByBarcode(barcode string) (string, error) {
-	if strings.TrimSpace(barcode) == "" {
-		return "", errors.New("empty barcode value")
-	}
+	ctx := context.Background()
 
-	// Query your database for the product with this barcode
-	var product struct {
-		ID           uint64  `json:"id"`
-		Name         string  `json:"name"`
-		Code         string  `json:"code"`
-		BarcodeValue string  `json:"barcode_value"`
-		Price        float64 `json:"price"`
-	}
-
-	query := `
-		SELECT id, name, code, barcode_value, price 
-		FROM products 
-		WHERE barcode_value = ?
-	`
-
-	err := s.Db.QueryRow(query, barcode).Scan(
-		&product.ID,
-		&product.Name,
-		&product.Code,
-		&product.BarcodeValue,
-		&product.Price,
-	)
-
+	// Query Firestore for products with matching barcode
+	iter := s.Client.Collection("products").Where("barcode_value", "==", barcode).Documents(ctx)
+	docs, err := iter.GetAll()
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return "", fmt.Errorf("no product found with barcode: %s", barcode)
-		}
-		return "", fmt.Errorf("database error: %v", err)
+		return "", fmt.Errorf("failed to query products: %v", err)
 	}
 
-	// Convert to JSON string
-	productJSON, err := json.Marshal(product)
+	if len(docs) == 0 {
+		return "", fmt.Errorf("no product found with barcode: %s", barcode)
+	}
+
+	// Get the first matching product
+	doc := docs[0]
+	var product Product
+	if err := doc.DataTo(&product); err != nil {
+		return "", fmt.Errorf("failed to parse product data: %v", err)
+	}
+
+	// Return product info as JSON
+	productInfo := map[string]interface{}{
+		"id":            product.ID,
+		"name":          product.Name,
+		"barcode_value": product.BarcodeValue,
+	}
+
+	jsonData, err := json.Marshal(productInfo)
 	if err != nil {
-		return "", fmt.Errorf("error marshaling product: %v", err)
+		return "", fmt.Errorf("failed to marshal product info: %v", err)
 	}
 
-	return string(productJSON), nil
+	return string(jsonData), nil
 }
 
-// FindProductByRecognitionData attempts to find a product by its image recognition data
-func (s *ImageRecognitionService) FindProductByRecognitionData(recognitionData string) (string, error) {
-	if strings.TrimSpace(recognitionData) == "" {
-		return "", errors.New("empty recognition data")
-	}
+// FindProductByName finds a product by its name in Firestore
+func (s *ImageRecognitionService) FindProductByName(name string) (string, error) {
+	ctx := context.Background()
 
-	// Parse the recognition data
-	var result struct {
-		Class      string  `json:"class"`
-		Confidence float64 `json:"confidence"`
-	}
-	if err := json.Unmarshal([]byte(recognitionData), &result); err != nil {
-		return "", fmt.Errorf("failed to parse recognition data: %v", err)
-	}
-
-	// Query your database for products with matching recognition data
-	var product struct {
-		ID                   uint64  `json:"id"`
-		Name                 string  `json:"name"`
-		Code                 string  `json:"code"`
-		ImageRecognitionData string  `json:"image_recognition_data"`
-		Price                float64 `json:"price"`
-		Confidence           float64 `json:"confidence"`
-	}
-
-	query := `
-		SELECT id, name, code, image_recognition_data, sale_price 
-		FROM products 
-		WHERE image_recognition_data LIKE ?
-		ORDER BY sale_price DESC
-		LIMIT 1
-	`
-
-	pattern := "%" + result.Class + "%"
-	err := s.Db.QueryRow(query, pattern).Scan(
-		&product.ID,
-		&product.Name,
-		&product.Code,
-		&product.ImageRecognitionData,
-		&product.Price,
-	)
-
+	// Query Firestore for products with matching name
+	iter := s.Client.Collection("products").Where("name", "==", name).Documents(ctx)
+	docs, err := iter.GetAll()
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return "", fmt.Errorf("no product found matching class: %s", result.Class)
-		}
-		return "", fmt.Errorf("database error: %v", err)
+		return "", fmt.Errorf("failed to query products: %v", err)
 	}
 
-	product.Confidence = result.Confidence
+	if len(docs) == 0 {
+		return "", fmt.Errorf("no product found with name: %s", name)
+	}
 
-	// Convert to JSON string
-	productJSON, err := json.Marshal(product)
+	// Get the first matching product
+	doc := docs[0]
+	var product Product
+	if err := doc.DataTo(&product); err != nil {
+		return "", fmt.Errorf("failed to parse product data: %v", err)
+	}
+
+	// Return product info as JSON
+	productInfo := map[string]interface{}{
+		"product_code": product.ID,
+		"name":         product.Name,
+	}
+
+	jsonData, err := json.Marshal(productInfo)
 	if err != nil {
-		return "", fmt.Errorf("error marshaling product: %v", err)
+		return "", fmt.Errorf("failed to marshal product info: %v", err)
 	}
 
-	return string(productJSON), nil
+	return string(jsonData), nil
 }

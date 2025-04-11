@@ -4,26 +4,40 @@ import (
 	"github.com/nirshpaa/godam-backend/models"
 )
 
-// ProductResponse : format json response for product
+// ProductResponse represents a product response
 type ProductResponse struct {
-	ID              uint64                  `json:"id"`
-	Code            string                  `json:"code"`
-	Name            string                  `json:"name"`
-	SalePrice       float64                 `json:"price"`
-	MinimumStock    uint                    `json:"minimum_stock"`
-	Company         CompanyResponse         `json:"company"`
-	Brand           BrandResponse           `json:"brand"`
-	ProductCategory ProductCategoryResponse `json:"product_category"`
+	ID                string  `json:"id"`
+	Code              string  `json:"code"`
+	Name              string  `json:"name"`
+	SalePrice         float64 `json:"price"`
+	MinimumStock      float64 `json:"minimum_stock"`
+	CompanyID         string  `json:"company_id"`
+	BrandID           string  `json:"brand_id"`
+	ProductCategoryID string  `json:"product_category_id"`
 }
 
-// Transform from Product model to Product response
-func (u *ProductResponse) Transform(product *models.Product) {
-	u.ID = product.ID
-	u.Code = product.Code
-	u.Name = product.Name
-	u.SalePrice = product.SalePrice
-	u.MinimumStock = product.MinimumStock
-	u.Company.Transform(&product.Company)
-	u.Brand.Transform(&product.Brand)
-	u.ProductCategory.Transform(&product.ProductCategory)
+// Transform transforms the model into a response
+func (r ProductResponse) Transform(p *models.FirebaseProduct) ProductResponse {
+	return ProductResponse{
+		Code:              p.Code,
+		Name:              p.Name,
+		SalePrice:         p.SalePrice,
+		MinimumStock:      p.MinimumStock,
+		CompanyID:         p.CompanyID,
+		BrandID:           p.BrandID,
+		ProductCategoryID: p.ProductCategoryID,
+	}
+}
+
+// ProductListResponse represents a list of products
+type ProductListResponse struct {
+	Products []ProductResponse `json:"products"`
+}
+
+// Transform transforms the model into a response
+func (r ProductListResponse) Transform(products []models.FirebaseProduct) ProductListResponse {
+	for _, p := range products {
+		r.Products = append(r.Products, ProductResponse{}.Transform(&p))
+	}
+	return r
 }

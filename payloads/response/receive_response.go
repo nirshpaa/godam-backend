@@ -6,27 +6,27 @@ import (
 	"github.com/nirshpaa/godam-backend/models"
 )
 
-// ReceiveResponse : format json response for Receive
+// ReceiveResponse represents a receive response
 type ReceiveResponse struct {
-	ID             uint64                  `json:"id"`
+	ID             string                  `json:"id"`
 	Code           string                  `json:"code"`
-	Date           time.Time               `json:"name"`
+	Date           time.Time               `json:"date"`
 	Remark         string                  `json:"remark"`
-	Purchase       PurchaseResponse        `json:"purchase"`
-	Company        CompanyResponse         `json:"company"`
-	Branch         BranchResponse          `json:"branch"`
+	PurchaseID     string                  `json:"purchase_id"`
+	CompanyID      string                  `json:"company_id"`
+	BranchID       string                  `json:"branch_id"`
 	ReceiveDetails []ReceiveDetailResponse `json:"receive_details"`
 }
 
-// Transform from Receive model to Receive response
-func (u *ReceiveResponse) Transform(receive *models.Receive) {
+// Transform converts a FirebaseReceive to a ReceiveResponse
+func (u *ReceiveResponse) Transform(receive *models.FirebaseReceive) {
 	u.ID = receive.ID
 	u.Code = receive.Code
 	u.Date = receive.Date
 	u.Remark = receive.Remark
-	u.Purchase.Transform(&receive.Purchase)
-	u.Company.Transform(&receive.Company)
-	u.Branch.Transform(&receive.Branch)
+	u.PurchaseID = receive.PurchaseID
+	u.CompanyID = receive.CompanyID
+	u.BranchID = receive.BranchID
 
 	for _, d := range receive.ReceiveDetails {
 		var p ReceiveDetailResponse
@@ -35,42 +35,37 @@ func (u *ReceiveResponse) Transform(receive *models.Receive) {
 	}
 }
 
-// ReceiveListResponse : format json response for Receive list
+// ReceiveListResponse represents a list of receives
 type ReceiveListResponse struct {
-	ID       uint64           `json:"id"`
-	Code     string           `json:"code"`
-	Date     time.Time        `json:"date"`
-	Remark   string           `json:"remark"`
-	Purchase PurchaseResponse `json:"purchase"`
-	Company  CompanyResponse  `json:"company"`
-	Branch   BranchResponse   `json:"branch"`
+	Data []ReceiveResponse `json:"data"`
 }
 
-// Transform from Receive model to Receive List response
-func (u *ReceiveListResponse) Transform(receive *models.Receive) {
-	u.ID = receive.ID
-	u.Code = receive.Code
-	u.Date = receive.Date
-	u.Remark = receive.Remark
-	u.Purchase.Transform(&receive.Purchase)
-	u.Company.Transform(&receive.Company)
-	u.Branch.Transform(&receive.Branch)
+// Transform converts a slice of FirebaseReceive to a ReceiveListResponse
+func (u *ReceiveListResponse) Transform(receives []models.FirebaseReceive) {
+	u.Data = make([]ReceiveResponse, len(receives))
+	for i, receive := range receives {
+		u.Data[i].Transform(&receive)
+	}
 }
 
-// ReceiveDetailResponse : format json response for Receive detail
+// ReceiveDetailResponse represents a receive detail response
 type ReceiveDetailResponse struct {
-	ID      uint64          `json:"id"`
-	Qty     uint            `json:"qty"`
-	Product ProductResponse `json:"product"`
-	Code    string          `json:"code"`
-	Shelve  ShelveResponse  `json:"shelve"`
+	ID        string                     `json:"id"`
+	ProductID string                     `json:"product_id"`
+	Qty       uint                       `json:"qty"`
+	Code      string                     `json:"code"`
+	ShelveID  string                     `json:"shelve_id"`
+	Product   models.FirebaseProduct     `json:"product"`
+	Shelve    models.ShelveFirebaseModel `json:"shelve"`
 }
 
-// Transform from ReceiveDetail model to ReceiveDetail response
-func (u *ReceiveDetailResponse) Transform(pd *models.ReceiveDetail) {
+// Transform converts a FirebaseReceiveDetail to a ReceiveDetailResponse
+func (u *ReceiveDetailResponse) Transform(pd *models.FirebaseReceiveDetail) {
 	u.ID = pd.ID
 	u.Qty = pd.Qty
-	u.Product.Transform(&pd.Product)
+	u.ProductID = pd.ProductID
 	u.Code = pd.Code
-	u.Shelve.Transform(&pd.Shelve)
+	u.ShelveID = pd.ShelveID
+	u.Product = pd.Product
+	u.Shelve = pd.Shelve
 }

@@ -4,18 +4,14 @@ import (
 	"github.com/nirshpaa/godam-backend/models"
 )
 
-//AccessResponse : format json response for user
+// AccessResponse json
 type AccessResponse struct {
-	ID       uint32 `json:"id"`
-	ParentID uint32 `json:"parent_id,omitempty"`
-	Name     string `json:"name"`
-	Alias    string `json:"alias"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
-//Transform from Access model to Access response
-func (u *AccessResponse) Transform(access *models.Access) {
+// Transform Access models to Access response
+func (u *AccessResponse) Transform(access *models.AccessFirebaseModel) {
 	u.ID = access.ID
-	u.ParentID = uint32(access.ParentID.Int64)
 	u.Name = access.Name
-	u.Alias = access.Alias
 }

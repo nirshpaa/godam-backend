@@ -3,19 +3,22 @@ package controllers
 import (
 	"context"
 	"net/http"
+	"os"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/db"
 	"github.com/gin-gonic/gin"
+	"github.com/nirshpaa/godam-backend/services"
 )
 
 // ProductController handles product-related operations
 type ProductController struct {
-	dbRef *db.Ref
+	dbRef                   *db.Ref
+	imageRecognitionService *services.ImageRecognitionService
 }
 
 // NewProductController creates a new product controller
-func NewProductController() *ProductController {
+func NewProductController(imageRecognitionService *services.ImageRecognitionService) *ProductController {
 	app, err := firebase.NewApp(context.Background(), nil)
 	if err != nil {
 		panic(err)
@@ -27,7 +30,8 @@ func NewProductController() *ProductController {
 	}
 
 	return &ProductController{
-		dbRef: dbClient.NewRef("products"),
+		dbRef:                   dbClient.NewRef("products"),
+		imageRecognitionService: imageRecognitionService,
 	}
 }
 
@@ -44,14 +48,14 @@ func (p *ProductController) List(c *gin.Context) {
 
 // Get retrieves a single product by ID
 func (p *ProductController) Get(c *gin.Context) {
-	id := c.Param("id")
-	if id == "" {
+	code := c.Param("code")
+	if code == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Product ID is required"})
 		return
 	}
 
 	var product map[string]interface{}
-	if err := p.dbRef.Child(id).Get(context.Background(), &product); err != nil {
+	if err := p.dbRef.Child(code).Get(context.Background(), &product); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
 		return
 	}
@@ -79,8 +83,8 @@ func (p *ProductController) Create(c *gin.Context) {
 
 // Update updates an existing product
 func (p *ProductController) Update(c *gin.Context) {
-	id := c.Param("id")
-	if id == "" {
+	code := c.Param("code")
+	if code == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Product ID is required"})
 		return
 	}
@@ -91,24 +95,24 @@ func (p *ProductController) Update(c *gin.Context) {
 		return
 	}
 
-	if err := p.dbRef.Child(id).Set(context.Background(), product); err != nil {
+	if err := p.dbRef.Child(code).Set(context.Background(), product); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update product"})
 		return
 	}
 
-	product["id"] = id
+	product["code"] = code
 	c.JSON(http.StatusOK, product)
 }
 
 // Delete removes a product
 func (p *ProductController) Delete(c *gin.Context) {
-	id := c.Param("id")
-	if id == "" {
+	code := c.Param("code")
+	if code == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Product ID is required"})
 		return
 	}
 
-	if err := p.dbRef.Child(id).Delete(context.Background()); err != nil {
+	if err := p.dbRef.Child(code).Delete(context.Background()); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete product"})
 		return
 	}
@@ -116,8 +120,46 @@ func (p *ProductController) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Product deleted successfully"})
 }
 
-// ScanImage handles product image scanning
-func (p *ProductController) ScanImage(c *gin.Context) {
-	// TODO: Implement image scanning with Firebase Storage
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "Image scanning not implemented yet"})
+// ScanProduct handles product scanning requests
+func (c *ProductController) ScanProduct(ctx *gin.Context) {
+	// Parse multipart form
+	if err := ctx.Request.ParseMultipartForm(10 << 20); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse form: " + err.Error()})
+		return
+	}
+
+	// Get file from form
+	file, _, err := ctx.Request.FormFile("image")
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "No image file provided: " + err.Error()})
+		return
+	}
+	defer file.Close()
+
+	// Create a temporary file to store the uploaded image
+	tempFile, err := os.CreateTemp("", "scan-*.png")
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create temporary file: " + err.Error()})
+		return
+	}
+	defer os.Remove(tempFile.Name())
+
+	// Copy the uploaded file to the temporary file
+	if _, err := tempFile.ReadFrom(file); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save uploaded file: " + err.Error()})
+		return
+	}
+
+	// Process the image
+	result, err := c.imageRecognitionService.ProcessImage(tempFile.Name())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process image: " + err.Error()})
+		return
+	}
+
+	// Return the recognition result
+	ctx.JSON(http.StatusOK, gin.H{
+		"success": result.Success,
+		"data":    result.Data,
+	})
 }

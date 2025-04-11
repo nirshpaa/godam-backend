@@ -1,31 +1,34 @@
 package response
 
-import "github.com/nirshpaa/godam-backend/models"
+import (
+	"github.com/nirshpaa/godam-backend/models"
+)
 
 // ProductCategoryResponse json
 type ProductCategoryResponse struct {
-	ID       uint64           `json:"id"`
-	Company  CompanyResponse  `json:"company"`
-	Name     string           `json:"name"`
-	Category CategoryResponse `json:"category"`
+	ID        string           `json:"id"`
+	CompanyID string           `json:"company_id"`
+	Company   CompanyResponse  `json:"company"`
+	Name      string           `json:"name"`
+	Category  CategoryResponse `json:"category"`
 }
 
 // Transform ProductCategory models to ProductCategory response
-func (u *ProductCategoryResponse) Transform(c *models.ProductCategory) {
-	u.ID = c.ID
-	u.Name = c.Name
-	u.Company.Transform(&c.Company)
-	u.Category.Transform(&c.Category)
+func (u *ProductCategoryResponse) Transform(category *models.ProductCategoryFirebaseModel) {
+	u.ID = category.ID
+	u.Name = category.Name
+	u.CompanyID = category.CompanyID
+	u.Category.Transform(&category.Category)
 }
 
 // CategoryResponse json
 type CategoryResponse struct {
-	ID   uint   `json:"id"`
+	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
 // Transform Category models to Category response
-func (u *CategoryResponse) Transform(c *models.Category) {
-	u.ID = c.ID
-	u.Name = c.Name
+func (u *CategoryResponse) Transform(category *models.CategoryFirebaseModel) {
+	u.ID = category.ID
+	u.Name = category.Name
 }

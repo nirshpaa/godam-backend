@@ -3,45 +3,38 @@ package main
 import (
 	"context"
 	"log"
-	"os"
 
-	firebase "firebase.google.com/go/v4"
-	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/nirshpaa/godam-backend/routing"
-	"google.golang.org/api/option"
+	"github.com/nirshpaa/godam-backend/cmd/server/setup"
+	"github.com/nirshpaa/godam-backend/services"
 )
 
 func main() {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
-		log.Printf("Warning: .env file not found")
+		log.Printf("Warning: Error loading .env file: %v", err)
 	}
 
-	// Initialize Firebase
-	opt := option.WithCredentialsFile("firebase-credentials.json")
-	app, err := firebase.NewApp(context.Background(), nil, opt)
+	// Create a background context
+	ctx := context.Background()
+
+	// Initialize Firebase service
+	firebaseService, err := services.NewFirebaseService(ctx, "firebase-credentials.json")
 	if err != nil {
-		log.Fatalf("Failed to initialize Firebase: %v", err)
+		log.Fatal("Failed to initialize Firebase service:", err)
 	}
 
-	// Initialize Gin
-	router := gin.Default()
-
-	// Add middleware
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
+	// Create and start the server
+	srv, err := setup.NewServer()
+	if err != nil {
+		log.Fatal("Failed to create server:", err)
+	}
 
 	// Setup routes
-	router.Use(routing.SetupRoutes())
+	setup.SetupRoutes(srv.GetRouter(), firebaseService)
 
-	// Start server
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	if err := router.Run(":" + port); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+	// Start the server
+	if err := srv.Start(); err != nil {
+		log.Fatal("Failed to start server:", err)
 	}
 }

@@ -4,18 +4,37 @@ import (
 	"github.com/nirshpaa/godam-backend/models"
 )
 
-//CompanyResponse : format json response for company
+// CompanyResponse represents a company response
 type CompanyResponse struct {
-	ID      uint32 `json:"id"`
-	Code    string `json:"code"`
-	Name    string `json:"name"`
-	Address string `json:"address"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Address     string `json:"address"`
+	Phone       string `json:"phone"`
+	Email       string `json:"email"`
+	Description string `json:"description"`
 }
 
-//Transform from Company model to Company response
-func (u *CompanyResponse) Transform(company *models.Company) {
-	u.ID = company.ID
-	u.Name = company.Name
-	u.Code = company.Code
-	u.Address = company.Address.String
+// CompanyListResponse represents a list of companies response
+type CompanyListResponse struct {
+	Companies []CompanyResponse `json:"companies"`
+}
+
+// Transform transforms a FirebaseCompany to CompanyResponse
+func (r *CompanyResponse) Transform(company *models.FirebaseCompany) *CompanyResponse {
+	r.ID = company.ID
+	r.Name = company.Name
+	r.Address = company.Address
+	r.Phone = company.Phone
+	r.Email = company.Email
+	r.Description = company.Description
+	return r
+}
+
+// Transform transforms a slice of FirebaseCompany to CompanyListResponse
+func (r *CompanyListResponse) Transform(companies []models.FirebaseCompany) *CompanyListResponse {
+	r.Companies = make([]CompanyResponse, len(companies))
+	for i, company := range companies {
+		r.Companies[i] = *(&CompanyResponse{}).Transform(&company)
+	}
+	return r
 }

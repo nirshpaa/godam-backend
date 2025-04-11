@@ -6,99 +6,102 @@ import (
 	"github.com/nirshpaa/godam-backend/models"
 )
 
-// NewSalesOrderReturnRequest : format json request for new salesOrder return
+// NewSalesOrderReturnRequest represents a new sales order return request
 type NewSalesOrderReturnRequest struct {
 	Date                    string                             `json:"date" validate:"required"`
 	AdditionalDisc          float64                            `json:"additional_disc"`
 	SalesOrderReturnDetails []NewSalesOrderReturnDetailRequest `json:"sales_order_return_details" validate:"required"`
-	SalesOrderID            uint64                             `json:"sales_order" validate:"required"`
+	SalesOrderID            string                             `json:"sales_order" validate:"required"`
 }
 
-// Transform NewSalesOrderReturnRequest to SalesOrder
-func (u *NewSalesOrderReturnRequest) Transform() *models.SalesOrderReturn {
-	var p models.SalesOrderReturn
+// Transform converts NewSalesOrderReturnRequest to FirebaseSalesOrderReturn
+func (u *NewSalesOrderReturnRequest) Transform() *models.FirebaseSalesOrderReturn {
+	var p models.FirebaseSalesOrderReturn
 	p.Date, _ = time.Parse("2006-01-02", u.Date)
-	p.SalesOrder.ID = u.SalesOrderID
+	p.SalesOrderID = u.SalesOrderID
 	p.AdditionalDisc = u.AdditionalDisc
-
-	for _, pd := range u.SalesOrderReturnDetails {
-		if pd.Qty < 1 {
-			pd.Qty = 1
-		}
-
-		p.SalesOrderReturnDetails = append(p.SalesOrderReturnDetails, pd.Transform())
-	}
-
+	p.SalesOrderReturnDetails = transformNewSalesOrderReturnDetails(u.SalesOrderReturnDetails)
 	return &p
 }
 
-// NewSalesOrderReturnDetailRequest : format json request for salesOrder return detail
+// NewSalesOrderReturnDetailRequest represents a new sales order return detail request
 type NewSalesOrderReturnDetailRequest struct {
 	Price     float64 `json:"price"`
 	Disc      float64 `json:"disc"`
 	Qty       uint    `json:"qty" validate:"required"`
-	ProductID uint64  `json:"product"`
+	ProductID string  `json:"product"`
 }
 
-// Transform NewSalesOrderReturnDetailRequest to SalesOrderReturnDetail
-func (u *NewSalesOrderReturnDetailRequest) Transform() models.SalesOrderReturnDetail {
-	var pd models.SalesOrderReturnDetail
-	pd.Price = u.Price
-	pd.Disc = u.Disc
-	pd.Qty = u.Qty
-	pd.Product.ID = u.ProductID
-
-	return pd
+// Transform converts NewSalesOrderReturnDetailRequest to FirebaseSalesOrderReturnDetail
+func (u *NewSalesOrderReturnDetailRequest) Transform() models.FirebaseSalesOrderReturnDetail {
+	if u.Qty < 1 {
+		u.Qty = 1
+	}
+	return models.FirebaseSalesOrderReturnDetail{
+		Price:     u.Price,
+		Disc:      u.Disc,
+		Qty:       u.Qty,
+		ProductID: u.ProductID,
+	}
 }
 
-// SalesOrderReturnRequest : format json request for salesOrder return
+// SalesOrderReturnRequest represents a sales order return request
 type SalesOrderReturnRequest struct {
-	ID                      uint64                          `json:"id" validate:"required"`
+	ID                      string                          `json:"id" validate:"required"`
 	Date                    string                          `json:"date"`
 	AdditionalDisc          float64                         `json:"additional_disc"`
 	SalesOrderReturnDetails []SalesOrderReturnDetailRequest `json:"sales_order_return_details"`
-	SalesOrderID            uint64                          `json:"sales_order"`
+	SalesOrderID            string                          `json:"sales_order"`
 }
 
-// Transform SalesOrderReturnRequest to SalesOrderReturn
-func (u *SalesOrderReturnRequest) Transform(p *models.SalesOrderReturn) *models.SalesOrderReturn {
-	if u.ID == p.ID {
-		p.Date, _ = time.Parse("2006-01-02", u.Date)
-		p.SalesOrder.ID = u.SalesOrderID
-		p.AdditionalDisc = u.AdditionalDisc
-
-		var details []models.SalesOrderReturnDetail
-		for _, pd := range u.SalesOrderReturnDetails {
-			if pd.Qty < 1 {
-				pd.Qty = 1
-			}
-
-			details = append(details, pd.Transform())
-		}
-
-		p.SalesOrderReturnDetails = details
-
-	}
-	return p
+// Transform converts SalesOrderReturnRequest to FirebaseSalesOrderReturn
+func (u *SalesOrderReturnRequest) Transform() *models.FirebaseSalesOrderReturn {
+	var p models.FirebaseSalesOrderReturn
+	p.ID = u.ID
+	p.Date, _ = time.Parse("2006-01-02", u.Date)
+	p.SalesOrderID = u.SalesOrderID
+	p.AdditionalDisc = u.AdditionalDisc
+	p.SalesOrderReturnDetails = transformSalesOrderReturnDetails(u.SalesOrderReturnDetails)
+	return &p
 }
 
-// SalesOrderReturnDetailRequest : format json request for salesOrder return detail
+// SalesOrderReturnDetailRequest represents a sales order return detail request
 type SalesOrderReturnDetailRequest struct {
-	ID        uint64  `json:"id"`
+	ID        string  `json:"id"`
 	Price     float64 `json:"price"`
 	Disc      float64 `json:"disc"`
 	Qty       uint    `json:"qty"`
-	ProductID uint64  `json:"product"`
+	ProductID string  `json:"product"`
 }
 
-// Transform SalesOrderReturnDetailRequest to SalesOrderReturnDetail
-func (u *SalesOrderReturnDetailRequest) Transform() models.SalesOrderReturnDetail {
-	var pd models.SalesOrderReturnDetail
-	pd.ID = u.ID
-	pd.Price = u.Price
-	pd.Disc = u.Disc
-	pd.Qty = u.Qty
-	pd.Product.ID = u.ProductID
+// Transform converts SalesOrderReturnDetailRequest to FirebaseSalesOrderReturnDetail
+func (u *SalesOrderReturnDetailRequest) Transform() models.FirebaseSalesOrderReturnDetail {
+	if u.Qty < 1 {
+		u.Qty = 1
+	}
+	return models.FirebaseSalesOrderReturnDetail{
+		ID:        u.ID,
+		Price:     u.Price,
+		Disc:      u.Disc,
+		Qty:       u.Qty,
+		ProductID: u.ProductID,
+	}
+}
 
-	return pd
+// Helper function to transform new sales order return details
+func transformNewSalesOrderReturnDetails(details []NewSalesOrderReturnDetailRequest) []models.FirebaseSalesOrderReturnDetail {
+	transformed := make([]models.FirebaseSalesOrderReturnDetail, len(details))
+	for i, detail := range details {
+		transformed[i] = detail.Transform()
+	}
+	return transformed
+}
+
+// Helper function to transform sales order return details
+func transformSalesOrderReturnDetails(details []SalesOrderReturnDetailRequest) []models.FirebaseSalesOrderReturnDetail {
+	transformed := make([]models.FirebaseSalesOrderReturnDetail, len(details))
+	for i, detail := range details {
+		transformed[i] = detail.Transform()
+	}
+	return transformed
 }

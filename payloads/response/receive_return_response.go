@@ -6,27 +6,27 @@ import (
 	"github.com/nirshpaa/godam-backend/models"
 )
 
-// ReceiveReturnResponse : format json response for Receive Return
+// ReceiveReturnResponse represents a receive return response
 type ReceiveReturnResponse struct {
-	ID                   uint64                        `json:"id"`
+	ID                   string                        `json:"id"`
 	Code                 string                        `json:"code"`
-	Date                 time.Time                     `json:"name"`
+	Date                 time.Time                     `json:"date"`
 	Remark               string                        `json:"remark"`
-	Receive              ReceiveResponse               `json:"receive"`
-	Company              CompanyResponse               `json:"company"`
-	Branch               BranchResponse                `json:"branch"`
+	ReceiveID            string                        `json:"receive_id"`
+	CompanyID            string                        `json:"company_id"`
+	BranchID             string                        `json:"branch_id"`
 	ReceiveReturnDetails []ReceiveReturnDetailResponse `json:"receive_return_details"`
 }
 
-// Transform from Receive Return model to Receive return response
-func (u *ReceiveReturnResponse) Transform(receiveReturn *models.ReceiveReturn) {
+// Transform converts a FirebaseReceiveReturn to a ReceiveReturnResponse
+func (u *ReceiveReturnResponse) Transform(receiveReturn *models.FirebaseReceiveReturn) {
 	u.ID = receiveReturn.ID
 	u.Code = receiveReturn.Code
 	u.Date = receiveReturn.Date
 	u.Remark = receiveReturn.Remark
-	u.Receive.Transform(&receiveReturn.Receive)
-	u.Company.Transform(&receiveReturn.Company)
-	u.Branch.Transform(&receiveReturn.Branch)
+	u.ReceiveID = receiveReturn.ReceiveID
+	u.CompanyID = receiveReturn.CompanyID
+	u.BranchID = receiveReturn.BranchID
 
 	for _, d := range receiveReturn.ReceiveReturnDetails {
 		var p ReceiveReturnDetailResponse
@@ -35,40 +35,33 @@ func (u *ReceiveReturnResponse) Transform(receiveReturn *models.ReceiveReturn) {
 	}
 }
 
-// ReceiveReturnListResponse : format json response for Receive Return list
+// ReceiveReturnListResponse represents a list of receive returns
 type ReceiveReturnListResponse struct {
-	ID      uint64          `json:"id"`
-	Code    string          `json:"code"`
-	Date    time.Time       `json:"date"`
-	Remark  string          `json:"remark"`
-	Receive ReceiveResponse `json:"receive"`
-	Company CompanyResponse `json:"company"`
-	Branch  BranchResponse  `json:"branch"`
+	Data []ReceiveReturnResponse `json:"data"`
 }
 
-// Transform from Receive Return model to Receive Return List response
-func (u *ReceiveReturnListResponse) Transform(receiveReturn *models.ReceiveReturn) {
-	u.ID = receiveReturn.ID
-	u.Code = receiveReturn.Code
-	u.Date = receiveReturn.Date
-	u.Remark = receiveReturn.Remark
-	u.Receive.Transform(&receiveReturn.Receive)
-	u.Company.Transform(&receiveReturn.Company)
-	u.Branch.Transform(&receiveReturn.Branch)
+// Transform converts a slice of FirebaseReceiveReturn to a ReceiveReturnListResponse
+func (u *ReceiveReturnListResponse) Transform(returns []models.FirebaseReceiveReturn) {
+	u.Data = make([]ReceiveReturnResponse, len(returns))
+	for i, ret := range returns {
+		u.Data[i].Transform(&ret)
+	}
 }
 
-// ReceiveReturnDetailResponse : format json response for Receive Return detail
+// ReceiveReturnDetailResponse represents a receive return detail response
 type ReceiveReturnDetailResponse struct {
-	ID      uint64          `json:"id"`
-	Qty     uint            `json:"qty"`
-	Product ProductResponse `json:"product"`
-	Code    string          `json:"code"`
+	ID        string                 `json:"id"`
+	ProductID string                 `json:"product_id"`
+	Qty       uint                   `json:"qty"`
+	Code      string                 `json:"code"`
+	Product   models.FirebaseProduct `json:"product"`
 }
 
-// Transform from ReceiveReturnDetail model to ReceiveReturnDetail response
-func (u *ReceiveReturnDetailResponse) Transform(pd *models.ReceiveReturnDetail) {
+// Transform converts a FirebaseReceiveReturnDetail to a ReceiveReturnDetailResponse
+func (u *ReceiveReturnDetailResponse) Transform(pd *models.FirebaseReceiveReturnDetail) {
 	u.ID = pd.ID
+	u.ProductID = pd.ProductID
 	u.Qty = pd.Qty
-	u.Product.Transform(&pd.Product)
 	u.Code = pd.Code
+	u.Product = pd.Product
 }

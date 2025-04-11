@@ -1,51 +1,46 @@
 package request
 
 import (
-	"database/sql"
-
 	"github.com/nirshpaa/godam-backend/models"
 )
 
-//NewCompanyRequest : format json request for new company
-type NewCompanyRequest struct {
-	Code    string `json:"code" validate:"required"`
-	Name    string `json:"name" validate:"required"`
-	Address string `json:"address,omitempty"`
-}
-
-//Transform NewCompanyRequest to Company
-func (u *NewCompanyRequest) Transform() *models.Company {
-	var company models.Company
-	company.Code = u.Code
-	company.Name = u.Name
-	if len(u.Address) > 0 {
-		company.Address = sql.NullString{Valid: true, String: u.Address}
-	}
-	return &company
-}
-
-//CompanyRequest : format json request for company
+// CompanyRequest represents a company request
 type CompanyRequest struct {
-	ID      uint32 `json:"id,omitempty" validate:"required"`
-	Code    string `json:"code,omitempty"`
-	Name    string `json:"name,omitempty"`
-	Address string `json:"address,omitempty"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Address     string `json:"address"`
+	Phone       string `json:"phone"`
+	Email       string `json:"email"`
+	Description string `json:"description"`
 }
 
-//Transform CompanyRequest to Company
-func (u *CompanyRequest) Transform(company *models.Company) *models.Company {
-	if u.ID == company.ID {
-		if len(u.Code) > 0 {
-			company.Code = u.Code
-		}
-
-		if len(u.Name) > 0 {
-			company.Name = u.Name
-		}
-
-		if len(u.Address) > 0 {
-			company.Address = sql.NullString{Valid: true, String: u.Address}
-		}
-	}
+// Transform transforms a CompanyRequest to FirebaseCompany
+func (r *CompanyRequest) Transform(company *models.FirebaseCompany) *models.FirebaseCompany {
+	company.ID = r.ID
+	company.Name = r.Name
+	company.Address = r.Address
+	company.Phone = r.Phone
+	company.Email = r.Email
+	company.Description = r.Description
 	return company
+}
+
+// NewCompanyRequest represents a new company request
+type NewCompanyRequest struct {
+	Name        string `json:"name"`
+	Address     string `json:"address"`
+	Phone       string `json:"phone"`
+	Email       string `json:"email"`
+	Description string `json:"description"`
+}
+
+// Transform transforms a NewCompanyRequest to FirebaseCompany
+func (r *NewCompanyRequest) Transform() *models.FirebaseCompany {
+	return &models.FirebaseCompany{
+		Name:        r.Name,
+		Address:     r.Address,
+		Phone:       r.Phone,
+		Email:       r.Email,
+		Description: r.Description,
+	}
 }

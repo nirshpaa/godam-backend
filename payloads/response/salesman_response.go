@@ -1,23 +1,22 @@
 package response
 
-import "github.com/nirshpaa/godam-backend/models"
+import (
+	"github.com/nirshpaa/godam-backend/models"
+)
 
 // SalesmanResponse json
 type SalesmanResponse struct {
-	ID      uint64          `json:"id"`
-	Company CompanyResponse `json:"company"`
-	Name    string          `json:"name"`
-	Email   string          `json:"email"`
-	Address string          `json:"address"`
-	Hp      string          `json:"hp"`
+	ID        string          `json:"id"`
+	CompanyID string          `json:"company_id"`
+	Company   CompanyResponse `json:"company"`
+	Code      string          `json:"code"`
+	Name      string          `json:"name"`
 }
 
-// Transform Salesman models to salesman response
-func (u *SalesmanResponse) Transform(c *models.Salesman) {
-	u.ID = c.ID
-	u.Name = c.Name
-	u.Email = c.Email
-	u.Address = c.Address
-	u.Hp = c.Hp
-	u.Company.Transform(&c.Company)
+// Transform Salesman models to Salesman response
+func (u *SalesmanResponse) Transform(salesman *models.SalesmanFirebaseModel) {
+	u.ID = salesman.ID
+	u.Code = salesman.Code
+	u.Name = salesman.Name
+	u.CompanyID = salesman.CompanyID
 }

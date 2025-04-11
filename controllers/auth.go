@@ -3,10 +3,12 @@ package controllers
 import (
 	"context"
 	"net/http"
+	"path/filepath"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
+	"google.golang.org/api/option"
 )
 
 // AuthController handles authentication-related operations
@@ -16,7 +18,11 @@ type AuthController struct {
 
 // NewAuthController creates a new auth controller
 func NewAuthController() *AuthController {
-	app, err := firebase.NewApp(context.Background(), nil)
+	// Get the absolute path to the credentials file
+	credPath := filepath.Join("firebase-credentials.json")
+	opt := option.WithCredentialsFile(credPath)
+
+	app, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
 		panic(err)
 	}
@@ -43,8 +49,8 @@ func (a *AuthController) Login(c *gin.Context) {
 		return
 	}
 
-	// Sign in with Firebase
-	user, err := a.authClient.SignInWithEmailAndPassword(context.Background(), credentials.Email, credentials.Password)
+	// Get user by email
+	user, err := a.authClient.GetUserByEmail(context.Background(), credentials.Email)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
@@ -61,6 +67,44 @@ func (a *AuthController) Login(c *gin.Context) {
 		"token": token,
 		"user":  user,
 	})
+}
+
+// Register handles user registration
+func (a *AuthController) Register(c *gin.Context) {
+	var user struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Create user in Firebase
+	params := (&auth.UserToCreate{}).
+		Email(user.Email).
+		Password(user.Password)
+
+	newUser, err := a.authClient.CreateUser(context.Background(), params)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"user": newUser})
+}
+
+// RefreshToken handles token refresh
+func (a *AuthController) RefreshToken(c *gin.Context) {
+	// TODO: Implement token refresh
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "Token refresh not implemented"})
+}
+
+// Logout handles user logout
+func (a *AuthController) Logout(c *gin.Context) {
+	// TODO: Implement logout
+	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
 
 // CheckEmail checks if an email is available

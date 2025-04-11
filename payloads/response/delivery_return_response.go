@@ -6,69 +6,68 @@ import (
 	"github.com/nirshpaa/godam-backend/models"
 )
 
-// DeliveryReturnResponse : format json response for Delivery Return
+// DeliveryReturnResponse represents a delivery return response
 type DeliveryReturnResponse struct {
-	ID                    uint64                         `json:"id"`
+	ID                    string                         `json:"id"`
 	Code                  string                         `json:"code"`
-	Date                  time.Time                      `json:"name"`
+	Date                  time.Time                      `json:"date"`
 	Remark                string                         `json:"remark"`
-	Delivery              DeliveryResponse               `json:"delivery"`
-	Company               CompanyResponse                `json:"company"`
-	Branch                BranchResponse                 `json:"branch"`
+	DeliveryID            string                         `json:"delivery_id"`
+	CompanyID             string                         `json:"company_id"`
+	BranchID              string                         `json:"branch_id"`
 	DeliveryReturnDetails []DeliveryReturnDetailResponse `json:"delivery_return_details"`
 }
 
-// Transform from Delivery Return model to Delivery return response
-func (u *DeliveryReturnResponse) Transform(deliveryReturn *models.DeliveryReturn) {
-	u.ID = deliveryReturn.ID
-	u.Code = deliveryReturn.Code
-	u.Date = deliveryReturn.Date
-	u.Remark = deliveryReturn.Remark
-	u.Delivery.Transform(&deliveryReturn.Delivery)
-	u.Company.Transform(&deliveryReturn.Company)
-	u.Branch.Transform(&deliveryReturn.Branch)
+// DeliveryReturnDetailResponse represents a delivery return detail response
+type DeliveryReturnDetailResponse struct {
+	ID        string                 `json:"id"`
+	ProductID string                 `json:"product_id"`
+	Qty       uint                   `json:"qty"`
+	Code      string                 `json:"code"`
+	Product   models.FirebaseProduct `json:"product"`
+}
 
-	for _, d := range deliveryReturn.DeliveryReturnDetails {
-		var p DeliveryReturnDetailResponse
-		p.Transform(&d)
-		u.DeliveryReturnDetails = append(u.DeliveryReturnDetails, p)
+// Transform transforms the model into a response
+func (r DeliveryReturnResponse) Transform(p *models.FirebaseDeliveryReturn) DeliveryReturnResponse {
+	r.ID = p.ID
+	r.Code = p.Code
+	r.Date = p.Date
+	r.Remark = p.Remark
+	r.DeliveryID = p.DeliveryID
+	r.CompanyID = p.CompanyID
+	r.BranchID = p.BranchID
+	r.DeliveryReturnDetails = transformDeliveryReturnDetails(p.DeliveryReturnDetails)
+	return r
+}
+
+// Transform transforms the model into a response
+func (r DeliveryReturnDetailResponse) Transform(p models.FirebaseDeliveryReturnDetail) DeliveryReturnDetailResponse {
+	return DeliveryReturnDetailResponse{
+		ID:        p.ID,
+		ProductID: p.ProductID,
+		Qty:       p.Qty,
+		Code:      p.Code,
+		Product:   p.Product,
 	}
 }
 
-// DeliveryReturnListResponse : format json response for Delivery Return list
+func transformDeliveryReturnDetails(details []models.FirebaseDeliveryReturnDetail) []DeliveryReturnDetailResponse {
+	var result []DeliveryReturnDetailResponse
+	for _, detail := range details {
+		result = append(result, DeliveryReturnDetailResponse{}.Transform(detail))
+	}
+	return result
+}
+
+// DeliveryReturnListResponse represents a list of delivery returns
 type DeliveryReturnListResponse struct {
-	ID       uint64           `json:"id"`
-	Code     string           `json:"code"`
-	Date     time.Time        `json:"date"`
-	Remark   string           `json:"remark"`
-	Delivery DeliveryResponse `json:"delivery"`
-	Company  CompanyResponse  `json:"company"`
-	Branch   BranchResponse   `json:"branch"`
+	DeliveryReturns []DeliveryReturnResponse `json:"delivery_returns"`
 }
 
-// Transform from Delivery Return model to Delivery Return List response
-func (u *DeliveryReturnListResponse) Transform(deliveryReturn *models.DeliveryReturn) {
-	u.ID = deliveryReturn.ID
-	u.Code = deliveryReturn.Code
-	u.Date = deliveryReturn.Date
-	u.Remark = deliveryReturn.Remark
-	u.Delivery.Transform(&deliveryReturn.Delivery)
-	u.Company.Transform(&deliveryReturn.Company)
-	u.Branch.Transform(&deliveryReturn.Branch)
-}
-
-// DeliveryReturnDetailResponse : format json response for Delivery Return detail
-type DeliveryReturnDetailResponse struct {
-	ID      uint64          `json:"id"`
-	Qty     uint            `json:"qty"`
-	Product ProductResponse `json:"product"`
-	Code    string          `json:"code"`
-}
-
-// Transform from DeliveryReturnDetail model to DeliveryReturnDetail response
-func (u *DeliveryReturnDetailResponse) Transform(pd *models.DeliveryReturnDetail) {
-	u.ID = pd.ID
-	u.Qty = pd.Qty
-	u.Product.Transform(&pd.Product)
-	u.Code = pd.Code
+// Transform transforms the model into a response
+func (r DeliveryReturnListResponse) Transform(returns []models.FirebaseDeliveryReturn) DeliveryReturnListResponse {
+	for _, ret := range returns {
+		r.DeliveryReturns = append(r.DeliveryReturns, DeliveryReturnResponse{}.Transform(&ret))
+	}
+	return r
 }

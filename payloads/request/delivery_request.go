@@ -11,80 +11,88 @@ type NewDeliveryRequest struct {
 	Date            string                     `json:"date" validate:"required"`
 	Remark          string                     `json:"remark"`
 	DeliveryDetails []NewDeliveryDetailRequest `json:"delivery_details" validate:"required"`
-	SalesOrderID    uint64                     `json:"sales_order" validate:"required"`
+	SalesOrderID    string                     `json:"sales_order" validate:"required"`
 }
 
-// Transform NewDeliveryRequest to Delivery
-func (u *NewDeliveryRequest) Transform() *models.Delivery {
-	var p models.Delivery
-	p.Date, _ = time.Parse("2006-01-02", u.Date)
-	p.SalesOrder.ID = u.SalesOrderID
-	p.Remark = u.Remark
-
-	for _, pd := range u.DeliveryDetails {
-		p.DeliveryDetails = append(p.DeliveryDetails, pd.Transform())
+// Transform NewDeliveryRequest to FirebaseDelivery
+func (u *NewDeliveryRequest) Transform() *models.FirebaseDelivery {
+	delivery := &models.FirebaseDelivery{
+		Date:         time.Now(),
+		Remark:       u.Remark,
+		SalesOrderID: u.SalesOrderID,
 	}
 
-	return &p
+	if u.Date != "" {
+		delivery.Date, _ = time.Parse("2006-01-02", u.Date)
+	}
+
+	for _, pd := range u.DeliveryDetails {
+		delivery.DeliveryDetails = append(delivery.DeliveryDetails, pd.Transform())
+	}
+
+	return delivery
 }
 
 // NewDeliveryDetailRequest : format json request for Delivery detail
 type NewDeliveryDetailRequest struct {
-	ProductID uint64 `json:"product" validate:"required"`
-	ShelveID  uint64 `json:"shelve" validate:"required"`
+	ProductID string `json:"product" validate:"required"`
+	ShelveID  string `json:"shelve" validate:"required"`
 }
 
-// Transform NewDeliveryDetailRequest to DeliveryDetail
-func (u *NewDeliveryDetailRequest) Transform() models.DeliveryDetail {
-	var pd models.DeliveryDetail
-	pd.Qty = 1
-	pd.Product.ID = u.ProductID
-	pd.Shelve.ID = u.ShelveID
-
-	return pd
+// Transform NewDeliveryDetailRequest to FirebaseDeliveryDetail
+func (u *NewDeliveryDetailRequest) Transform() models.FirebaseDeliveryDetail {
+	return models.FirebaseDeliveryDetail{
+		Qty:       1,
+		ProductID: u.ProductID,
+		ShelveID:  u.ShelveID,
+	}
 }
 
 // DeliveryRequest : format json request for Delivery
 type DeliveryRequest struct {
-	ID              uint64                  `json:"id" validate:"required"`
+	ID              string                  `json:"id" validate:"required"`
 	Date            string                  `json:"date"`
 	Remark          string                  `json:"remark"`
 	DeliveryDetails []DeliveryDetailRequest `json:"delivery_details"`
-	SalesOrderID    uint64                  `json:"sales_order"`
+	SalesOrderID    string                  `json:"sales_order"`
 }
 
-// Transform DeliveryRequest to Delivery
-func (u *DeliveryRequest) Transform(p *models.Delivery) *models.Delivery {
-	if u.ID == p.ID {
-		p.Date, _ = time.Parse("2006-01-02", u.Date)
-		p.SalesOrder.ID = u.SalesOrderID
-		p.Remark = u.Remark
+// Transform DeliveryRequest to FirebaseDelivery
+func (u *DeliveryRequest) Transform(delivery *models.FirebaseDelivery) *models.FirebaseDelivery {
+	if u.ID == delivery.ID {
+		if u.Date != "" {
+			delivery.Date, _ = time.Parse("2006-01-02", u.Date)
+		}
+		if u.SalesOrderID != "" {
+			delivery.SalesOrderID = u.SalesOrderID
+		}
+		if u.Remark != "" {
+			delivery.Remark = u.Remark
+		}
 
-		var details []models.DeliveryDetail
+		var details []models.FirebaseDeliveryDetail
 		for _, pd := range u.DeliveryDetails {
 			details = append(details, pd.Transform())
 		}
 
-		p.DeliveryDetails = details
-
+		delivery.DeliveryDetails = details
 	}
-	return p
+	return delivery
 }
 
 // DeliveryDetailRequest : format json request for Delivery detail
 type DeliveryDetailRequest struct {
-	ID        uint64 `json:"id"`
-	ProductID uint64 `json:"product"`
-	ShelveID  uint64 `json:"shelve"`
+	ID        string `json:"id"`
+	ProductID string `json:"product"`
+	ShelveID  string `json:"shelve"`
 }
 
-// Transform DeliveryDetailRequest to DeliveryDetail
-func (u *DeliveryDetailRequest) Transform() models.DeliveryDetail {
-	var pd models.DeliveryDetail
-	pd.ID = u.ID
-	pd.Qty = 1
-	pd.Product.ID = u.ProductID
-	pd.Shelve.ID = u.ShelveID
-
-	return pd
+// Transform DeliveryDetailRequest to FirebaseDeliveryDetail
+func (u *DeliveryDetailRequest) Transform() models.FirebaseDeliveryDetail {
+	return models.FirebaseDeliveryDetail{
+		ID:        u.ID,
+		Qty:       1,
+		ProductID: u.ProductID,
+		ShelveID:  u.ShelveID,
+	}
 }

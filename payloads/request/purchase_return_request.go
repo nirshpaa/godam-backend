@@ -3,102 +3,104 @@ package request
 import (
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/nirshpaa/godam-backend/models"
 )
 
-// NewPurchaseReturnRequest : format json request for new purchase return
+// NewPurchaseReturnRequest represents a new purchase return request
 type NewPurchaseReturnRequest struct {
-	Date                  string                           `json:"date" validate:"required"`
-	AdditionalDisc        float64                          `json:"additional_disc"`
-	PurchaseReturnDetails []NewPurchaseReturnDetailRequest `json:"purchase_return_details" validate:"required"`
-	PurchaseID            uint64                           `json:"purchase" validate:"required"`
+	Date                  time.Time                        `json:"date" binding:"required"`
+	Remark                string                           `json:"remark"`
+	PurchaseReturnDetails []NewPurchaseReturnDetailRequest `json:"purchase_return_details" binding:"required"`
+	PurchaseID            string                           `json:"purchase_id" binding:"required"`
 }
 
-// Transform NewPurchaseReturnRequest to Purchase
-func (u *NewPurchaseReturnRequest) Transform() *models.PurchaseReturn {
-	var p models.PurchaseReturn
-	p.Date, _ = time.Parse("2006-01-02", u.Date)
-	p.Purchase.ID = u.PurchaseID
-	p.AdditionalDisc = u.AdditionalDisc
-
-	for _, pd := range u.PurchaseReturnDetails {
-		if pd.Qty < 1 {
-			pd.Qty = 1
-		}
-
-		p.PurchaseReturnDetails = append(p.PurchaseReturnDetails, pd.Transform())
-	}
-
-	return &p
-}
-
-// NewPurchaseReturnDetailRequest : format json request for purchase return detail
+// NewPurchaseReturnDetailRequest represents a new purchase return detail request
 type NewPurchaseReturnDetailRequest struct {
-	Price     float64 `json:"price"`
-	Disc      float64 `json:"disc"`
-	Qty       uint    `json:"qty" validate:"required"`
-	ProductID uint64  `json:"product"`
+	ProductID string `json:"product_id" binding:"required"`
+	Qty       uint   `json:"qty" binding:"required"`
+	Code      string `json:"code" binding:"required"`
 }
 
-// Transform NewPurchaseReturnDetailRequest to PurchaseReturnDetail
-func (u *NewPurchaseReturnDetailRequest) Transform() models.PurchaseReturnDetail {
-	var pd models.PurchaseReturnDetail
-	pd.Price = u.Price
-	pd.Disc = u.Disc
-	pd.Qty = u.Qty
-	pd.Product.ID = u.ProductID
-
-	return pd
-}
-
-// PurchaseReturnRequest : format json request for purchase return
+// PurchaseReturnRequest represents an update purchase return request
 type PurchaseReturnRequest struct {
-	ID                    uint64                        `json:"id" validate:"required"`
-	Date                  string                        `json:"date"`
-	AdditionalDisc        float64                       `json:"additional_disc"`
-	PurchaseReturnDetails []PurchaseReturnDetailRequest `json:"purchase_return_details"`
-	PurchaseID            uint64                        `json:"purchase"`
+	ID                    string                        `json:"id" binding:"required"`
+	Date                  time.Time                     `json:"date" binding:"required"`
+	Remark                string                        `json:"remark"`
+	PurchaseReturnDetails []PurchaseReturnDetailRequest `json:"purchase_return_details" binding:"required"`
+	PurchaseID            string                        `json:"purchase_id" binding:"required"`
 }
 
-// Transform PurchaseReturnRequest to PurchaseReturn
-func (u *PurchaseReturnRequest) Transform(p *models.PurchaseReturn) *models.PurchaseReturn {
-	if u.ID == p.ID {
-		p.Date, _ = time.Parse("2006-01-02", u.Date)
-		p.Purchase.ID = u.PurchaseID
-		p.AdditionalDisc = u.AdditionalDisc
-
-		var details []models.PurchaseReturnDetail
-		for _, pd := range u.PurchaseReturnDetails {
-			if pd.Qty < 1 {
-				pd.Qty = 1
-			}
-
-			details = append(details, pd.Transform())
-		}
-
-		p.PurchaseReturnDetails = details
-
-	}
-	return p
-}
-
-// PurchaseReturnDetailRequest : format json request for purchase return detail
+// PurchaseReturnDetailRequest represents an update purchase return detail request
 type PurchaseReturnDetailRequest struct {
-	ID        uint64  `json:"id"`
-	Price     float64 `json:"price"`
-	Disc      float64 `json:"disc"`
-	Qty       uint    `json:"qty"`
-	ProductID uint64  `json:"product"`
+	ID        string `json:"id" binding:"required"`
+	ProductID string `json:"product_id" binding:"required"`
+	Qty       uint   `json:"qty" binding:"required"`
+	Code      string `json:"code" binding:"required"`
 }
 
-// Transform PurchaseReturnDetailRequest to PurchaseReturnDetail
-func (u *PurchaseReturnDetailRequest) Transform() models.PurchaseReturnDetail {
-	var pd models.PurchaseReturnDetail
-	pd.ID = u.ID
-	pd.Price = u.Price
-	pd.Disc = u.Disc
-	pd.Qty = u.Qty
-	pd.Product.ID = u.ProductID
+// Transform transforms the request into a model
+func (u *NewPurchaseReturnRequest) Transform() *models.FirebasePurchaseReturn {
+	return &models.FirebasePurchaseReturn{
+		Date:                  u.Date,
+		Remark:                u.Remark,
+		PurchaseID:            u.PurchaseID,
+		PurchaseReturnDetails: transformNewPurchaseReturnDetails(u.PurchaseReturnDetails),
+	}
+}
 
-	return pd
+// Transform transforms the request into a model
+func (u *NewPurchaseReturnDetailRequest) Transform() models.FirebasePurchaseReturnDetail {
+	return models.FirebasePurchaseReturnDetail{
+		ProductID: u.ProductID,
+		Qty:       u.Qty,
+		Code:      u.Code,
+	}
+}
+
+// Transform transforms the request into a model
+func (u *PurchaseReturnRequest) Transform() *models.FirebasePurchaseReturn {
+	return &models.FirebasePurchaseReturn{
+		ID:                    u.ID,
+		Date:                  u.Date,
+		Remark:                u.Remark,
+		PurchaseID:            u.PurchaseID,
+		PurchaseReturnDetails: transformPurchaseReturnDetails(u.PurchaseReturnDetails),
+	}
+}
+
+// Transform transforms the request into a model
+func (u *PurchaseReturnDetailRequest) Transform() models.FirebasePurchaseReturnDetail {
+	return models.FirebasePurchaseReturnDetail{
+		ID:        u.ID,
+		ProductID: u.ProductID,
+		Qty:       u.Qty,
+		Code:      u.Code,
+	}
+}
+
+func transformNewPurchaseReturnDetails(details []NewPurchaseReturnDetailRequest) []models.FirebasePurchaseReturnDetail {
+	var result []models.FirebasePurchaseReturnDetail
+	for _, detail := range details {
+		result = append(result, detail.Transform())
+	}
+	return result
+}
+
+func transformPurchaseReturnDetails(details []PurchaseReturnDetailRequest) []models.FirebasePurchaseReturnDetail {
+	var result []models.FirebasePurchaseReturnDetail
+	for _, detail := range details {
+		result = append(result, detail.Transform())
+	}
+	return result
+}
+
+// Validate validates the request
+func (u *NewPurchaseReturnRequest) Validate(c *gin.Context) error {
+	return c.ShouldBindJSON(u)
+}
+
+// Validate validates the request
+func (u *PurchaseReturnRequest) Validate(c *gin.Context) error {
+	return c.ShouldBindJSON(u)
 }

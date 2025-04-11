@@ -3,102 +3,108 @@ package request
 import (
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/nirshpaa/godam-backend/models"
 )
 
-// NewPurchaseRequest : format json request for new purchase
+// NewPurchaseRequest represents a new purchase request
 type NewPurchaseRequest struct {
-	Date            string                     `json:"date" validate:"required"`
+	Date            time.Time                  `json:"date" binding:"required"`
 	AdditionalDisc  float64                    `json:"additional_disc"`
-	PurchaseDetails []NewPurchaseDetailRequest `json:"purchase_details" validate:"required"`
-	SupplierID      uint64                     `json:"supplier" validate:"required"`
+	PurchaseDetails []NewPurchaseDetailRequest `json:"purchase_details" binding:"required"`
+	SupplierID      string                     `json:"supplier_id" binding:"required"`
 }
 
-// Transform NewPurchaseRequest to Purchase
-func (u *NewPurchaseRequest) Transform() *models.Purchase {
-	var p models.Purchase
-	p.Date, _ = time.Parse("2006-01-02", u.Date)
-	p.Supplier.ID = u.SupplierID
-	p.AdditionalDisc = u.AdditionalDisc
-
-	for _, pd := range u.PurchaseDetails {
-		if pd.Qty < 1 {
-			pd.Qty = 1
-		}
-
-		p.PurchaseDetails = append(p.PurchaseDetails, pd.Transform())
-	}
-
-	return &p
-}
-
-// NewPurchaseDetailRequest : format json request for purchase detail
+// NewPurchaseDetailRequest represents a new purchase detail request
 type NewPurchaseDetailRequest struct {
-	Price     float64 `json:"price" validate:"required"`
+	Price     float64 `json:"price" binding:"required"`
 	Disc      float64 `json:"disc"`
-	Qty       uint    `json:"qty" validate:"required"`
-	ProductID uint64  `json:"product" validate:"required"`
+	Qty       uint    `json:"qty" binding:"required"`
+	ProductID string  `json:"product_id" binding:"required"`
 }
 
-// Transform NewPurchaseDetailRequest to PurchaseDetail
-func (u *NewPurchaseDetailRequest) Transform() models.PurchaseDetail {
-	var pd models.PurchaseDetail
-	pd.Price = u.Price
-	pd.Disc = u.Disc
-	pd.Qty = u.Qty
-	pd.Product.ID = u.ProductID
-
-	return pd
-}
-
-// PurchaseRequest : format json request for purchase
+// PurchaseRequest represents an update purchase request
 type PurchaseRequest struct {
-	ID              uint64                  `json:"id" validate:"required"`
-	Date            string                  `json:"date"`
+	ID              string                  `json:"id" binding:"required"`
+	Date            time.Time               `json:"date" binding:"required"`
 	AdditionalDisc  float64                 `json:"additional_disc"`
-	PurchaseDetails []PurchaseDetailRequest `json:"purchase_details"`
-	SupplierID      uint64                  `json:"supplier"`
+	PurchaseDetails []PurchaseDetailRequest `json:"purchase_details" binding:"required"`
+	SupplierID      string                  `json:"supplier_id" binding:"required"`
 }
 
-// Transform PurchaseRequest to Purchase
-func (u *PurchaseRequest) Transform(p *models.Purchase) *models.Purchase {
-	if u.ID == p.ID {
-		p.Date, _ = time.Parse("2006-01-02", u.Date)
-		p.Supplier.ID = u.SupplierID
-		p.AdditionalDisc = u.AdditionalDisc
-
-		var details []models.PurchaseDetail
-		for _, pd := range u.PurchaseDetails {
-			if pd.Qty < 1 {
-				pd.Qty = 1
-			}
-
-			details = append(details, pd.Transform())
-		}
-
-		p.PurchaseDetails = details
-
-	}
-	return p
-}
-
-// PurchaseDetailRequest : format json request for purchase detail
+// PurchaseDetailRequest represents an update purchase detail request
 type PurchaseDetailRequest struct {
-	ID        uint64  `json:"id"`
-	Price     float64 `json:"price"`
+	ID        string  `json:"id" binding:"required"`
+	Price     float64 `json:"price" binding:"required"`
 	Disc      float64 `json:"disc"`
-	Qty       uint    `json:"qty"`
-	ProductID uint64  `json:"product"`
+	Qty       uint    `json:"qty" binding:"required"`
+	ProductID string  `json:"product_id" binding:"required"`
 }
 
-// Transform PurchaseDetailRequest to PurchaseDetail
-func (u *PurchaseDetailRequest) Transform() models.PurchaseDetail {
-	var pd models.PurchaseDetail
-	pd.ID = u.ID
-	pd.Price = u.Price
-	pd.Disc = u.Disc
-	pd.Qty = u.Qty
-	pd.Product.ID = u.ProductID
+// Transform transforms the request into a model
+func (u *NewPurchaseRequest) Transform() *models.FirebasePurchase {
+	return &models.FirebasePurchase{
+		Date:            u.Date,
+		AdditionalDisc:  u.AdditionalDisc,
+		SupplierID:      u.SupplierID,
+		PurchaseDetails: transformNewPurchaseDetails(u.PurchaseDetails),
+	}
+}
 
-	return pd
+// Transform transforms the request into a model
+func (u *NewPurchaseDetailRequest) Transform() models.FirebasePurchaseDetail {
+	return models.FirebasePurchaseDetail{
+		Price:     u.Price,
+		Disc:      u.Disc,
+		Qty:       u.Qty,
+		ProductID: u.ProductID,
+	}
+}
+
+// Transform transforms the request into a model
+func (u *PurchaseRequest) Transform() *models.FirebasePurchase {
+	return &models.FirebasePurchase{
+		ID:              u.ID,
+		Date:            u.Date,
+		AdditionalDisc:  u.AdditionalDisc,
+		SupplierID:      u.SupplierID,
+		PurchaseDetails: transformPurchaseDetails(u.PurchaseDetails),
+	}
+}
+
+// Transform transforms the request into a model
+func (u *PurchaseDetailRequest) Transform() models.FirebasePurchaseDetail {
+	return models.FirebasePurchaseDetail{
+		ID:        u.ID,
+		Price:     u.Price,
+		Disc:      u.Disc,
+		Qty:       u.Qty,
+		ProductID: u.ProductID,
+	}
+}
+
+func transformNewPurchaseDetails(details []NewPurchaseDetailRequest) []models.FirebasePurchaseDetail {
+	var result []models.FirebasePurchaseDetail
+	for _, detail := range details {
+		result = append(result, detail.Transform())
+	}
+	return result
+}
+
+func transformPurchaseDetails(details []PurchaseDetailRequest) []models.FirebasePurchaseDetail {
+	var result []models.FirebasePurchaseDetail
+	for _, detail := range details {
+		result = append(result, detail.Transform())
+	}
+	return result
+}
+
+// Validate validates the request
+func (u *NewPurchaseRequest) Validate(c *gin.Context) error {
+	return c.ShouldBindJSON(u)
+}
+
+// Validate validates the request
+func (u *PurchaseRequest) Validate(c *gin.Context) error {
+	return c.ShouldBindJSON(u)
 }

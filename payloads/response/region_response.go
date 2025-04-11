@@ -4,18 +4,14 @@ import (
 	"github.com/nirshpaa/godam-backend/models"
 )
 
-//RegionResponse : format json response for region
+// RegionResponse json
 type RegionResponse struct {
-	ID      uint32          `json:"id"`
-	Code    string          `json:"code"`
-	Name    string          `json:"name"`
-	Company CompanyResponse `json:"company"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
-//Transform from Region model to Region response
-func (u *RegionResponse) Transform(region *models.Region) {
+// Transform Region models to Region response
+func (u *RegionResponse) Transform(region *models.RegionFirebaseModel) {
 	u.ID = region.ID
-	u.Code = region.Code
 	u.Name = region.Name
-	u.Company.Transform(&region.Company)
 }
