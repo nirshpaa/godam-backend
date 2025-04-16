@@ -153,28 +153,36 @@ func (s *PredictiveService) GetSalesReport(ctx context.Context, companyID string
 	productDetails := make(map[string]*models.ProductDetail)
 
 	for _, sale := range sales {
+		totalSales += sale.TotalAmount // Use the order's total amount
+
 		for _, item := range sale.SalesOrderDetails {
-			totalSales += item.TotalPrice
-			totalQuantity += float64(item.Quantity)
+			totalQuantity += item.Quantity // Quantity is already float64
 
 			// Update product details
 			if detail, exists := productDetails[item.ProductCode]; exists {
-				detail.QuantitySold += float64(item.Quantity)
+				detail.QuantitySold += item.Quantity
 				detail.TotalRevenue += item.TotalPrice
-				detail.AveragePrice = detail.TotalRevenue / detail.QuantitySold
+				if detail.QuantitySold > 0 {
+					detail.AveragePrice = detail.TotalRevenue / detail.QuantitySold
+				}
 			} else {
 				product, err := s.productModel.Get(ctx, item.ProductCode)
 				if err != nil {
 					continue
 				}
 
+				avgPrice := 0.0
+				if item.Quantity > 0 {
+					avgPrice = item.TotalPrice / item.Quantity
+				}
+
 				productDetails[item.ProductCode] = &models.ProductDetail{
 					ProductCode:  item.ProductCode,
 					ProductName:  product.Name,
-					QuantitySold: float64(item.Quantity),
+					QuantitySold: item.Quantity,
 					TotalRevenue: item.TotalPrice,
-					AveragePrice: item.TotalPrice / float64(item.Quantity),
-					ProfitMargin: calculateProfitMargin(item.TotalPrice, product.PurchasePrice),
+					AveragePrice: avgPrice,
+					ProfitMargin: calculateProfitMargin(item.TotalPrice, product.PurchasePrice*item.Quantity),
 				}
 			}
 		}

@@ -20,7 +20,15 @@ func NewSalesOrderHandler(salesOrderFirebase *models.SalesOrderFirebase) *SalesO
 }
 
 func (h *SalesOrderHandler) List(c *gin.Context) {
-	salesOrders, err := h.salesOrderFirebase.List(c.Request.Context())
+	// Get company ID from context
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Company ID is required"})
+		return
+	}
+
+	// Get sales orders for the company
+	salesOrders, err := h.salesOrderFirebase.FindByCompany(c.Request.Context(), companyID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -44,11 +52,21 @@ func (h *SalesOrderHandler) Get(c *gin.Context) {
 }
 
 func (h *SalesOrderHandler) Create(c *gin.Context) {
+	// Get company ID from context
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Company ID is required"})
+		return
+	}
+
 	var salesOrder types.SalesOrder
 	if err := c.ShouldBindJSON(&salesOrder); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Set the company ID
+	salesOrder.CompanyID = companyID
 
 	err := h.salesOrderFirebase.Create(c.Request.Context(), salesOrder)
 	if err != nil {
@@ -97,8 +115,15 @@ func (h *SalesOrderHandler) Delete(c *gin.Context) {
 }
 
 func (h *SalesOrderHandler) Stats(c *gin.Context) {
-	// Get all sales orders
-	orders, err := h.salesOrderFirebase.List(c.Request.Context())
+	// Get company ID from context
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Company ID is required"})
+		return
+	}
+
+	// Get all sales orders for the company
+	orders, err := h.salesOrderFirebase.FindByCompany(c.Request.Context(), companyID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

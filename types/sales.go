@@ -19,6 +19,7 @@ type SalesOrder struct {
 	Date              string             `json:"date"`
 	CustomerID        string             `json:"customer_id"`
 	SalesmanID        string             `json:"salesman_id"`
+	CompanyID         string             `json:"company_id"`
 	TotalAmount       float64            `json:"total_amount"`
 	Discount          float64            `json:"discount"`
 	AdditionalDisc    float64            `json:"additional_disc"`

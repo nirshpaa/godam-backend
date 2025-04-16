@@ -413,4 +413,28 @@ func SetupRoutes(router *gin.Engine, firebaseService *services.FirebaseService) 
 		}
 		return nil
 	})
+
+	initModel("predictive", func() error {
+		productFirebase, err := models.NewProductFirebase(firebaseService.GetFirestore())
+		if err != nil {
+			return fmt.Errorf("failed to create product model: %v", err)
+		}
+		salesOrderFirebase := models.NewSalesOrderFirebase(firebaseService.GetFirestore())
+		if salesOrderFirebase == nil {
+			return fmt.Errorf("failed to create sales order model")
+		}
+		predictiveService := services.NewPredictiveService(productFirebase, salesOrderFirebase)
+		if predictiveService == nil {
+			return fmt.Errorf("failed to create predictive service")
+		}
+		predictiveHandler := handlers.NewPredictiveHandler(predictiveService)
+		predictive := router.Group("/predictive")
+		{
+			predictive.GET("/stock-recommendations/:companyId", predictiveHandler.GetStockRecommendations)
+			predictive.GET("/sales-predictions/:companyId", predictiveHandler.GetSalesPredictions)
+			predictive.GET("/product-history/:productCode", predictiveHandler.GetProductHistory)
+			predictive.GET("/sales-report/:companyId", predictiveHandler.GetSalesReport)
+		}
+		return nil
+	})
 }
