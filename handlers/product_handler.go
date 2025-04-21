@@ -237,7 +237,7 @@ func (h *ProductHandler) UpdateImage(c *gin.Context) {
 		return
 	}
 
-	err = h.productModel.UpdateImage(c.Request.Context(), code, imageURL, result.Data, result.Data)
+	err = h.productModel.UpdateImage(c.Request.Context(), code, imageURL, result.Data.(string), result.Data.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

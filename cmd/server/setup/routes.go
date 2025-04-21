@@ -17,7 +17,7 @@ func SetupRoutes(router *gin.Engine, firebaseService *services.FirebaseService) 
 	// Initialize services
 	basePath := os.Getenv("UPLOAD_PATH")
 	if basePath == "" {
-		basePath = "./uploads"
+		basePath = "./assets/products"
 	}
 	fileStorage := services.NewFileStorageService(basePath)
 
@@ -33,6 +33,14 @@ func SetupRoutes(router *gin.Engine, firebaseService *services.FirebaseService) 
 			"status": "ok",
 		})
 	})
+
+	// Add company list route BEFORE auth middleware (publicly accessible)
+	companyFirebase := models.NewCompanyFirebase(firebaseService.GetFirestore())
+	if companyFirebase == nil {
+		log.Fatalf("Failed to initialize company model")
+	}
+	companyHandler := handlers.NewCompanyHandler(companyFirebase)
+	router.GET("/companies", companyHandler.List) // Public access to company list
 
 	// Apply auth middleware to all routes except health check
 	router.Use(middleware.AuthMiddleware(firebaseService))
@@ -149,7 +157,6 @@ func SetupRoutes(router *gin.Engine, firebaseService *services.FirebaseService) 
 		companyHandler := handlers.NewCompanyHandler(companyFirebase)
 		companies := router.Group("/companies")
 		{
-			companies.GET("", companyHandler.List)
 			companies.GET("/:id", companyHandler.Get)
 			companies.POST("", companyHandler.Create)
 			companies.PUT("/:id", companyHandler.Update)
@@ -299,7 +306,11 @@ func SetupRoutes(router *gin.Engine, firebaseService *services.FirebaseService) 
 		if salesOrderFirebase == nil {
 			return fmt.Errorf("failed to create sales order model")
 		}
-		salesOrderHandler := handlers.NewSalesOrderHandler(salesOrderFirebase)
+		productFirebase, err := models.NewProductFirebase(firebaseService.GetFirestore())
+		if err != nil {
+			return fmt.Errorf("failed to create product model: %v", err)
+		}
+		salesOrderHandler := handlers.NewSalesOrderHandler(salesOrderFirebase, productFirebase)
 		salesOrders := router.Group("/sales-orders")
 		{
 			salesOrders.GET("", salesOrderHandler.List)
@@ -308,6 +319,7 @@ func SetupRoutes(router *gin.Engine, firebaseService *services.FirebaseService) 
 			salesOrders.PUT("/:id", salesOrderHandler.Update)
 			salesOrders.DELETE("/:id", salesOrderHandler.Delete)
 			salesOrders.GET("/stats", salesOrderHandler.Stats)
+			salesOrders.POST("/update-stock", salesOrderHandler.UpdateProductStock)
 		}
 		return nil
 	})
@@ -410,6 +422,30 @@ func SetupRoutes(router *gin.Engine, firebaseService *services.FirebaseService) 
 			deliveryReturns.POST("", deliveryReturnHandler.Create)
 			deliveryReturns.PUT("/:id", deliveryReturnHandler.Update)
 			deliveryReturns.DELETE("/:id", deliveryReturnHandler.Delete)
+		}
+		return nil
+	})
+
+	initModel("predictive", func() error {
+		productFirebase, err := models.NewProductFirebase(firebaseService.GetFirestore())
+		if err != nil {
+			return fmt.Errorf("failed to create product model: %v", err)
+		}
+		salesOrderFirebase := models.NewSalesOrderFirebase(firebaseService.GetFirestore())
+		if salesOrderFirebase == nil {
+			return fmt.Errorf("failed to create sales order model")
+		}
+		predictiveService := services.NewPredictiveService(productFirebase, salesOrderFirebase)
+		if predictiveService == nil {
+			return fmt.Errorf("failed to create predictive service")
+		}
+		predictiveHandler := handlers.NewPredictiveHandler(predictiveService)
+		predictive := router.Group("/predictive")
+		{
+			predictive.GET("/stock-recommendations/:companyId", predictiveHandler.GetStockRecommendations)
+			predictive.GET("/sales-predictions/:companyId", predictiveHandler.GetSalesPredictions)
+			predictive.GET("/product-history/:productCode", predictiveHandler.GetProductHistory)
+			predictive.GET("/sales-report/:companyId", predictiveHandler.GetSalesReport)
 		}
 		return nil
 	})

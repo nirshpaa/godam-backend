@@ -1,6 +1,6 @@
 [
   {
-    "origin": ["*"],
+    "origin": ["localhost", "https://qck0g7e-anonymous-8081.exp.direct"],
     "method": ["GET", "PUT", "POST", "DELETE", "HEAD"],
     "maxAgeSeconds": 3600,
     "responseHeader": ["Content-Type", "Access-Control-Allow-Origin"]

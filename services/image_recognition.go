@@ -96,15 +96,15 @@ func (s *ImageRecognitionService) ProcessImage(imagePath string) (*types.ImageRe
 	}
 
 	// If no product found or confidence is low, return create product action
-	createProductData := map[string]interface{}{
-		"action":         "create_product",
-		"suggested_name": data.Class,
-		"confidence":     data.Confidence,
+	createProductData := types.CreateProductData{
+		Action:        "create_product",
+		SuggestedName: data.Class,
+		Confidence:    data.Confidence,
 	}
-	jsonData, _ := json.Marshal(createProductData)
+
 	return &types.ImageRecognitionResult{
 		Success: false,
-		Data:    string(jsonData),
+		Data:    createProductData,
 	}, nil
 }
 

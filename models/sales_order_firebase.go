@@ -17,6 +17,7 @@ type SalesOrderFirebase struct {
 	Date              string                   `json:"date"`
 	CustomerID        string                   `json:"customer_id"`
 	SalesmanID        string                   `json:"salesman_id"`
+	CompanyID         string                   `json:"company_id"`
 	TotalAmount       float64                  `json:"total_amount"`
 	Discount          float64                  `json:"discount"`
 	AdditionalDisc    float64                  `json:"additional_disc"`
@@ -81,6 +82,9 @@ func (s *SalesOrderFirebase) Create(ctx context.Context, order types.SalesOrder)
 	// Validate the order
 	if order.CustomerID == "" {
 		return fmt.Errorf("customer ID is required")
+	}
+	if order.CompanyID == "" {
+		return fmt.Errorf("company ID is required")
 	}
 	if len(order.SalesOrderDetails) == 0 {
 		return fmt.Errorf("order must have at least one item")
@@ -148,7 +152,15 @@ func (s *SalesOrderFirebase) FindByCompany(ctx context.Context, companyID string
 
 // GetSalesByDateRange retrieves sales orders within a date range
 func (s *SalesOrderFirebase) GetSalesByDateRange(ctx context.Context, companyID string, startDate, endDate time.Time) ([]types.SalesOrder, error) {
-	query := s.client.Collection("sales_orders").Where("company_id", "==", companyID).Where("date", ">=", startDate).Where("date", "<=", endDate)
+	// Convert time.Time to RFC3339 strings for comparison
+	startDateStr := startDate.Format(time.RFC3339)
+	endDateStr := endDate.Format(time.RFC3339)
+
+	query := s.client.Collection("sales_orders").
+		Where("company_id", "==", companyID).
+		Where("date", ">=", startDateStr).
+		Where("date", "<=", endDateStr)
+
 	docs, err := query.Documents(ctx).GetAll()
 	if err != nil {
 		return nil, err

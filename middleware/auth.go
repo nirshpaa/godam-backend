@@ -15,7 +15,10 @@ type contextKey string
 // UserIDKey is the key used to store the user ID in the context
 const UserIDKey contextKey = "userID"
 
-// AuthMiddleware validates Firebase ID tokens
+// CompanyIDKey is the key used to store the company ID in the context
+const CompanyIDKey contextKey = "company_id"
+
+// AuthMiddleware validates Firebase ID tokens and extracts company ID
 func AuthMiddleware(firebaseService *services.FirebaseService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Skip auth for health check endpoint
@@ -50,8 +53,24 @@ func AuthMiddleware(firebaseService *services.FirebaseService) gin.HandlerFunc {
 			return
 		}
 
-		// Set the user ID in the context
+		// Skip company ID requirement for companies endpoint
+		if c.Request.URL.Path == "/companies" {
+			c.Set("userID", decodedToken.UID)
+			c.Next()
+			return
+		}
+
+		// Get the company ID from the header
+		companyID := c.GetHeader("X-Company-ID")
+		if companyID == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Company ID is required"})
+			c.Abort()
+			return
+		}
+
+		// Set the user ID and company ID in the context
 		c.Set("userID", decodedToken.UID)
+		c.Set("company_id", companyID)
 		c.Next()
 	}
 }
@@ -65,4 +84,15 @@ func SetUserID(ctx context.Context, userID string) context.Context {
 func GetUserID(ctx context.Context) (string, bool) {
 	userID, ok := ctx.Value(UserIDKey).(string)
 	return userID, ok
+}
+
+// SetCompanyID sets the company ID in the context
+func SetCompanyID(ctx context.Context, companyID string) context.Context {
+	return context.WithValue(ctx, CompanyIDKey, companyID)
+}
+
+// GetCompanyID retrieves the company ID from the context
+func GetCompanyID(ctx context.Context) (string, bool) {
+	companyID, ok := ctx.Value(CompanyIDKey).(string)
+	return companyID, ok
 }

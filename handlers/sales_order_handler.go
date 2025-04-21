@@ -10,17 +10,27 @@ import (
 )
 
 type SalesOrderHandler struct {
-	salesOrderFirebase *models.SalesOrderFirebase
+	salesOrderModel *models.SalesOrderFirebase
+	productModel    *models.ProductFirebase
 }
 
-func NewSalesOrderHandler(salesOrderFirebase *models.SalesOrderFirebase) *SalesOrderHandler {
+func NewSalesOrderHandler(salesOrderModel *models.SalesOrderFirebase, productModel *models.ProductFirebase) *SalesOrderHandler {
 	return &SalesOrderHandler{
-		salesOrderFirebase: salesOrderFirebase,
+		salesOrderModel: salesOrderModel,
+		productModel:    productModel,
 	}
 }
 
 func (h *SalesOrderHandler) List(c *gin.Context) {
-	salesOrders, err := h.salesOrderFirebase.List(c.Request.Context())
+	// Get company ID from context
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Company ID is required"})
+		return
+	}
+
+	// Get sales orders for the company
+	salesOrders, err := h.salesOrderModel.FindByCompany(c.Request.Context(), companyID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -35,7 +45,7 @@ func (h *SalesOrderHandler) Get(c *gin.Context) {
 		return
 	}
 
-	salesOrder, err := h.salesOrderFirebase.GetByID(c.Request.Context(), id)
+	salesOrder, err := h.salesOrderModel.GetByID(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -44,13 +54,23 @@ func (h *SalesOrderHandler) Get(c *gin.Context) {
 }
 
 func (h *SalesOrderHandler) Create(c *gin.Context) {
+	// Get company ID from context
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Company ID is required"})
+		return
+	}
+
 	var salesOrder types.SalesOrder
 	if err := c.ShouldBindJSON(&salesOrder); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	err := h.salesOrderFirebase.Create(c.Request.Context(), salesOrder)
+	// Set the company ID
+	salesOrder.CompanyID = companyID
+
+	err := h.salesOrderModel.Create(c.Request.Context(), salesOrder)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -73,7 +93,7 @@ func (h *SalesOrderHandler) Update(c *gin.Context) {
 	}
 
 	salesOrder.Code = id
-	if err := h.salesOrderFirebase.Update(c.Request.Context(), id, salesOrder); err != nil {
+	if err := h.salesOrderModel.Update(c.Request.Context(), id, salesOrder); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -88,7 +108,7 @@ func (h *SalesOrderHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.salesOrderFirebase.Delete(c.Request.Context(), id); err != nil {
+	if err := h.salesOrderModel.Delete(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -97,8 +117,15 @@ func (h *SalesOrderHandler) Delete(c *gin.Context) {
 }
 
 func (h *SalesOrderHandler) Stats(c *gin.Context) {
-	// Get all sales orders
-	orders, err := h.salesOrderFirebase.List(c.Request.Context())
+	// Get company ID from context
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Company ID is required"})
+		return
+	}
+
+	// Get all sales orders for the company
+	orders, err := h.salesOrderModel.FindByCompany(c.Request.Context(), companyID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -130,4 +157,41 @@ func (h *SalesOrderHandler) Stats(c *gin.Context) {
 		"total_sales":    totalSales,
 		"monthly_income": monthlyIncome,
 	})
+}
+
+// UpdateProductStock handles POST /sales-orders/update-stock
+func (h *SalesOrderHandler) UpdateProductStock(c *gin.Context) {
+	var request struct {
+		ProductID string  `json:"productId" binding:"required"`
+		Quantity  float64 `json:"quantity" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get the product
+	product, err := h.productModel.Get(c.Request.Context(), request.ProductID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
+		return
+	}
+
+	// Check if there's enough stock
+	if product.MinimumStock < request.Quantity {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Insufficient stock"})
+		return
+	}
+
+	// Update the stock
+	product.MinimumStock -= request.Quantity
+
+	// Save the updated product
+	if err := h.productModel.UpdateStock(c.Request.Context(), request.ProductID, product.MinimumStock); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Stock updated successfully"})
 }

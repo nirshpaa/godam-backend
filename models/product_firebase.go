@@ -300,3 +300,36 @@ func (p *ProductFirebase) ProcessImage(imagePath string, imageRecognition interf
 
 	return result, nil
 }
+
+// UpdateStock updates only the stock field of a product
+func (p *ProductFirebase) UpdateStock(ctx context.Context, code string, newStock float64) error {
+	// First get the product to ensure it exists
+	product, err := p.Get(ctx, code)
+	if err != nil {
+		return fmt.Errorf("failed to get product with code %s: %v", code, err)
+	}
+
+	// Update the stock field
+	product.MinimumStock = newStock
+
+	// Get the document reference
+	docRef := p.client.Collection("products").Where("code", "==", code).Limit(1)
+	docs, err := docRef.Documents(ctx).GetAll()
+	if err != nil {
+		return fmt.Errorf("failed to get document reference: %v", err)
+	}
+	if len(docs) == 0 {
+		return fmt.Errorf("no document found for product with code: %s", code)
+	}
+
+	// Update the document
+	_, err = docs[0].Ref.Update(ctx, []firestore.Update{
+		{Path: "minimum_stock", Value: newStock},
+		{Path: "updated_at", Value: time.Now()},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update product stock: %v", err)
+	}
+
+	return nil
+}

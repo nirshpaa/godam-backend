@@ -54,17 +54,16 @@ func NewServer() (*Server, error) {
 	// Create new router
 	router := gin.Default()
 
-	// Apply middleware in correct order
-	router.Use(gin.Recovery())
-	router.Use(middleware.CORS())
-	router.Use(middleware.Logger(logger))
-
-	// Serve static files from the assets directory
+	// Serve static files from the assets directory (before auth middleware)
 	router.Static("/assets", "./assets")
 	router.Static("/images", "./public/images")
+	router.Static("/uploads", "./assets/products")
 
-	// Apply auth middleware last, but exclude static file routes
+	// Apply middleware in correct order
+	router.Use(gin.Recovery())
+	router.Use(middleware.Logger(logger))
 	router.Use(middleware.AuthMiddleware(firebaseService))
+	router.Use(middleware.CORS())
 
 	return &Server{
 		router:          router,
