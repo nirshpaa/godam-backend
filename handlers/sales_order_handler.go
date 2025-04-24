@@ -60,9 +60,6 @@ func (h *SalesOrderHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Set the company ID
-	salesOrder.CompanyID = companyID
-
 	err := h.salesOrderModel.Create(c.Request.Context(), salesOrder)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
