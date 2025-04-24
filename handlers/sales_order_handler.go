@@ -54,13 +54,6 @@ func (h *SalesOrderHandler) Get(c *gin.Context) {
 }
 
 func (h *SalesOrderHandler) Create(c *gin.Context) {
-	// Get company ID from context
-	companyID := c.GetString("company_id")
-	if companyID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Company ID is required"})
-		return
-	}
-
 	var salesOrder types.SalesOrder
 	if err := c.ShouldBindJSON(&salesOrder); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
